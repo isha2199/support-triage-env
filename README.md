@@ -264,7 +264,7 @@ pip install -r requirements.txt
 
 # Use the environment directly
 python - <<'EOF'
-from environment import SupportTriageEnv
+from environment import SupportTriageEnvcd /Users/isha.isha/support-triage-env 
 from environment.models import Action
 
 env = SupportTriageEnv()
