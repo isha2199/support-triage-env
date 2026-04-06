@@ -1,0 +1,164 @@
+name: customer-support-ticket-triage
+version: "1.0.0"
+description: >
+  An OpenEnv-compliant environment for training and evaluating AI agents
+  on real-world customer support ticket triage. Agents must classify ticket
+  priority, route to the correct department, detect customer sentiment, decide
+  escalation, and — at the hardest level — draft a complete professional
+  response. All graders are deterministic and produce scores in [0.0, 1.0].
+
+author: OpenEnv Submission
+license: MIT
+tags:
+  - customer-support
+  - nlp
+  - classification
+  - text-generation
+  - routing
+  - real-world
+  - openenv
+
+repository: https://github.com/placeholder/support-triage-env
+
+# ── Tasks ─────────────────────────────────────────────────────────────────────
+tasks:
+  - id: task1_triage
+    name: "Quick Triage"
+    difficulty: easy
+    description: >
+      Classify the ticket priority (P0–P3) and route it to the correct
+      department. Two-field action; partial credit for adjacent priority.
+    max_steps: 5
+    expected_score_range: [0.60, 1.00]
+    reward_weights:
+      priority: 0.50
+      department: 0.50
+
+  - id: task2_routing
+    name: "Smart Routing"
+    difficulty: medium
+    description: >
+      Extend Task 1 with customer sentiment detection (positive/neutral/
+      negative/angry) and binary escalation decision. Requires understanding
+      of business context and urgency signals.
+    max_steps: 5
+    expected_score_range: [0.40, 0.80]
+    reward_weights:
+      priority: 0.30
+      department: 0.30
+      sentiment: 0.20
+      escalate: 0.20
+
+  - id: task3_resolution
+    name: "Full Resolution"
+    difficulty: hard
+    description: >
+      Complete triage plus drafting a full professional email response.
+      Response is graded on greeting, acknowledgment, technical accuracy
+      (keyword coverage), next-steps clarity, professional closing, and
+      appropriate length (80–300 words).
+    max_steps: 5
+    expected_score_range: [0.25, 0.65]
+    reward_weights:
+      priority: 0.10
+      department: 0.10
+      response_greeting: 0.06
+      response_acknowledgment: 0.10
+      response_solution: 0.30
+      response_next_steps: 0.14
+      response_closing: 0.08
+      response_length: 0.12
+
+# ── Observation space ─────────────────────────────────────────────────────────
+observation_space:
+  type: object
+  description: "One support ticket plus task metadata per step."
+  properties:
+    ticket:
+      type: object
+      properties:
+        ticket_id:    { type: string }
+        subject:      { type: string }
+        body:         { type: string }
+        sender:       { type: string }
+        sender_tier:  { type: string, enum: [free, basic, enterprise] }
+        product:      { type: string }
+        timestamp:    { type: string, format: date-time }
+    task_id:          { type: string }
+    step:             { type: integer, minimum: 0 }
+    max_steps:        { type: integer }
+    episode:          { type: integer }
+    task_description: { type: string }
+    action_schema:    { type: object }
+
+# ── Action space ──────────────────────────────────────────────────────────────
+action_space:
+  type: object
+  description: >
+    Not all fields are required for every task. See action_schema in
+    the observation for task-specific requirements.
+  properties:
+    priority:
+      type: string
+      enum: [P0, P1, P2, P3]
+      description: "P0=critical/down, P1=high/major-impact, P2=medium/degraded, P3=low/question"
+    department:
+      type: string
+      enum: [engineering, billing, support, security, product, sales]
+    sentiment:
+      type: string
+      enum: [positive, neutral, negative, angry]
+    escalate:
+      type: boolean
+      description: "true if ticket requires immediate manager escalation"
+    response_draft:
+      type: string
+      description: "Full professional email response, 80–300 words"
+
+# ── Reward ────────────────────────────────────────────────────────────────────
+reward:
+  range: [0.0, 1.0]
+  frequency: per_step
+  description: >
+    Each step yields a reward in [0.0, 1.0] based on how accurately the
+    agent triaged the ticket. Partial credit is awarded for adjacent priority
+    levels (e.g. P1 when correct is P0 → 50% priority credit) and proportional
+    response keyword coverage. The episode score is the mean over all steps.
+  signal_type: dense
+  sparse: false
+
+# ── Episode structure ─────────────────────────────────────────────────────────
+episode:
+  num_steps: 5
+  reset_on_start: true
+  deterministic: true
+  description: "Each episode presents 5 tickets in fixed order for reproducibility."
+
+# ── API endpoints ─────────────────────────────────────────────────────────────
+api:
+  reset:
+    method: POST
+    path: /reset
+    body: { task_id: string }
+    returns: Observation
+
+  step:
+    method: POST
+    path: /step
+    body: Action
+    returns: StepResult  # { observation, reward, reward_breakdown, feedback, done, info }
+
+  state:
+    method: GET
+    path: /state
+    returns: EnvironmentState
+
+# ── Baseline scores (GPT-4o-mini, temperature=0) ─────────────────────────────
+baseline:
+  model: gpt-4o-mini
+  temperature: 0.0
+  scores:
+    task1_triage: 0.82
+    task2_routing: 0.58
+    task3_resolution: 0.41
+  overall_mean: 0.60
