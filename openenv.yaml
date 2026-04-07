@@ -117,7 +117,8 @@ action_space:
 
 # ── Reward ────────────────────────────────────────────────────────────────────
 reward:
-  range: [0.0, 1.0]
+  range: [0.001, 0.999]
+  exclusive_bounds: true
   frequency: per_step
   description: >
     Each step yields a reward strictly in (0.0, 1.0) — endpoints excluded —

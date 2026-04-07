@@ -123,7 +123,7 @@ class SupportTriageEnv:
         }
         if is_done:
             raw = self._total_reward / len(self._tickets)
-            info["episode_score"] = round(max(1e-6, min(1.0 - 1e-6, raw)), 6)
+            info["episode_score"] = round(max(0.001, min(0.999, raw)), 6)
 
         return StepResult(
             observation=next_obs,

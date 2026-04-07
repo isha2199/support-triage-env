@@ -9,8 +9,8 @@ from typing import Any, Dict, Tuple
 
 from .models import Action
 
-_SCORE_MIN = 1e-6
-_SCORE_MAX = 1.0 - 1e-6
+_SCORE_MIN = 0.001
+_SCORE_MAX = 0.999
 
 
 def _clip(score: float) -> float:
