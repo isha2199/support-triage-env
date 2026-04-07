@@ -80,12 +80,22 @@ class StepResponse(BaseModel):
 
 # ── Endpoints ────────────────────────────────────────────────────────────────
 
+def _load_ui() -> str:
+    """Load UI HTML — tries static file first, falls back to embedded."""
+    for candidate in [
+        Path(__file__).parent / "static" / "index.html",
+        Path("/app/static/index.html"),
+        Path("static/index.html"),
+    ]:
+        if candidate.exists():
+            return candidate.read_text()
+    return _FALLBACK_HTML
+
+_FALLBACK_HTML = '<html><body style="background:#0d1117;color:#e2e8f0;font-family:sans-serif;padding:40px"><h2>📧 Customer Support Triage — OpenEnv</h2><p style="margin-top:12px;color:#8b949e">UI loading error. Use the <a href="/docs" style="color:#58a6ff">API docs</a> or <a href="/api" style="color:#58a6ff">/api</a> endpoint.</p></body></html>'
+
 @app.get("/", tags=["meta"])
 def root() -> HTMLResponse:
-    ui_path = Path(__file__).parent / "static" / "index.html"
-    if ui_path.exists():
-        return HTMLResponse(content=ui_path.read_text(), status_code=200)
-    return HTMLResponse(content='<a href="/docs">API Docs</a>', status_code=200)
+    return HTMLResponse(content=_load_ui(), status_code=200)
 
 @app.get("/api", tags=["meta"])
 def api_info() -> Dict[str, Any]:
