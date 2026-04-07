@@ -21,6 +21,7 @@ COPY static/ ./static/
 COPY app.py .
 COPY openenv.yaml .
 COPY inference.py .
+COPY pyproject.toml .
 
 # Ensure python path includes /app
 ENV PYTHONPATH=/app
