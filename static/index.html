@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Customer Support Ticket Triage — OpenEnv Demo</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #1e3a5f 0%, #0f2744 100%);
+      border-bottom: 1px solid #2d4a6e;
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    header .logo { font-size: 32px; }
+    header h1 { font-size: 20px; font-weight: 700; color: #fff; }
+    header p { font-size: 13px; color: #94a3b8; margin-top: 2px; }
+    .badge {
+      margin-left: auto;
+      background: #1a3a5c;
+      border: 1px solid #2d6a9f;
+      color: #60a5fa;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Layout ── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+
+    /* ── Task selector ── */
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 12px;
+    }
+    .tasks-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 32px;
+    }
+    .task-card {
+      background: #1a1f2e;
+      border: 2px solid #2a3142;
+      border-radius: 12px;
+      padding: 18px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .task-card:hover { border-color: #4a6fa5; transform: translateY(-2px); }
+    .task-card.active { border-color: var(--task-color); background: var(--task-bg); }
+    .task-card .diff-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      background: var(--task-color);
+      color: #fff;
+      letter-spacing: 0.5px;
+    }
+    .task-card h3 { font-size: 15px; font-weight: 700; color: #f1f5f9; margin-bottom: 4px; }
+    .task-card p { font-size: 12px; color: #94a3b8; line-height: 1.5; }
+    .task-card .fields {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .task-card .field-tag {
+      font-size: 10px;
+      padding: 2px 7px;
+      background: #252c3d;
+      border: 1px solid #3a4257;
+      border-radius: 6px;
+      color: #94a3b8;
+    }
+    .task-easy  { --task-color: #22c55e; --task-bg: #0f2a1a; }
+    .task-medium{ --task-color: #f59e0b; --task-bg: #2a1f0a; }
+    .task-hard  { --task-color: #ef4444; --task-bg: #2a0f0f; }
+
+    /* ── Main play area ── */
+    .play-area {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 20px;
+    }
+
+    /* ── Ticket card ── */
+    .ticket-card {
+      background: #1a1f2e;
+      border: 1px solid #2a3142;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .ticket-header {
+      background: #151a27;
+      padding: 14px 20px;
+      border-bottom: 1px solid #2a3142;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .ticket-id { font-size: 11px; color: #64748b; font-family: monospace; }
+    .step-progress { display: flex; gap: 6px; }
+    .step-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #2a3142;
+      transition: background 0.3s;
+    }
+    .step-dot.done { background: #22c55e; }
+    .step-dot.active { background: #60a5fa; }
+
+    .ticket-body { padding: 20px; }
+    .ticket-subject {
+      font-size: 17px;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 14px;
+      line-height: 1.4;
+    }
+    .ticket-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .meta-chip {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: #252c3d;
+      border: 1px solid #3a4257;
+      color: #94a3b8;
+    }
+    .meta-chip.tier-enterprise { border-color: #7c3aed; color: #a78bfa; background: #1e1a2e; }
+    .meta-chip.tier-basic      { border-color: #2563eb; color: #60a5fa; background: #111a2e; }
+    .meta-chip.tier-free       { border-color: #475569; color: #94a3b8; }
+    .ticket-message {
+      background: #151a27;
+      border: 1px solid #2a3142;
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-size: 14px;
+      color: #cbd5e1;
+      line-height: 1.7;
+      white-space: pre-wrap;
+    }
+
+    /* ── Action panel ── */
+    .action-panel {
+      background: #1a1f2e;
+      border: 1px solid #2a3142;
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .panel-header {
+      background: #151a27;
+      padding: 14px 20px;
+      border-bottom: 1px solid #2a3142;
+      font-size: 13px;
+      font-weight: 600;
+      color: #94a3b8;
+      letter-spacing: 0.3px;
+    }
+    .panel-body { padding: 16px; flex: 1; overflow-y: auto; }
+
+    .form-group { margin-bottom: 14px; }
+    .form-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #64748b;
+      margin-bottom: 6px;
+    }
+    .form-select, .form-textarea {
+      width: 100%;
+      background: #0f1117;
+      border: 1px solid #2a3142;
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-size: 14px;
+      padding: 9px 12px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-select:focus, .form-textarea:focus { border-color: #3b82f6; }
+    .form-textarea { min-height: 130px; resize: vertical; font-family: inherit; line-height: 1.6; }
+    .form-select option { background: #1a1f2e; }
+
+    .toggle-group {
+      display: flex;
+      gap: 8px;
+    }
+    .toggle-btn {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #2a3142;
+      border-radius: 8px;
+      background: #0f1117;
+      color: #94a3b8;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .toggle-btn.selected-true  { border-color: #22c55e; background: #0f2a1a; color: #22c55e; }
+    .toggle-btn.selected-false { border-color: #ef4444; background: #2a0f0f; color: #ef4444; }
+
+    .submit-btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 4px;
+      letter-spacing: 0.3px;
+    }
+    .submit-btn:hover { background: linear-gradient(135deg, #3b82f6, #2563eb); transform: translateY(-1px); }
+    .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    /* ── Reward display ── */
+    .reward-box {
+      margin-top: 14px;
+      background: #0f1117;
+      border: 1px solid #2a3142;
+      border-radius: 8px;
+      padding: 14px;
+      display: none;
+    }
+    .reward-box.visible { display: block; }
+    .reward-score-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .reward-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #64748b; }
+    .reward-score {
+      font-size: 28px;
+      font-weight: 800;
+      font-family: monospace;
+    }
+    .score-great { color: #22c55e; }
+    .score-ok    { color: #f59e0b; }
+    .score-poor  { color: #ef4444; }
+    .reward-bar-bg {
+      height: 6px;
+      background: #2a3142;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+    .reward-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.6s ease;
+    }
+    .reward-feedback {
+      font-size: 11px;
+      color: #64748b;
+      font-family: monospace;
+      word-break: break-all;
+      line-height: 1.5;
+    }
+
+    /* ── Score tracker ── */
+    .score-tracker {
+      background: #1a1f2e;
+      border: 1px solid #2a3142;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-top: 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .score-tracker .total-label { font-size: 12px; color: #64748b; }
+    .score-tracker .total-val {
+      font-size: 26px;
+      font-weight: 800;
+      font-family: monospace;
+      color: #60a5fa;
+    }
+    .step-scores { display: flex; gap: 8px; flex: 1; }
+    .step-score-chip {
+      flex: 1;
+      text-align: center;
+      background: #151a27;
+      border: 1px solid #2a3142;
+      border-radius: 8px;
+      padding: 8px 4px;
+      font-size: 13px;
+      font-weight: 700;
+      font-family: monospace;
+      color: #4a5568;
+      transition: all 0.3s;
+    }
+    .step-score-chip.filled { color: #f1f5f9; }
+
+    /* ── Placeholder / empty state ── */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #4a5568;
+    }
+    .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+    .empty-state h3 { font-size: 18px; color: #64748b; margin-bottom: 8px; }
+    .empty-state p  { font-size: 14px; }
+
+    /* ── Episode complete ── */
+    .episode-complete {
+      text-align: center;
+      padding: 40px 20px;
+      display: none;
+    }
+    .episode-complete.visible { display: block; }
+    .episode-complete .big-score {
+      font-size: 64px;
+      font-weight: 900;
+      font-family: monospace;
+      margin: 12px 0;
+    }
+    .episode-complete h2 { font-size: 20px; color: #94a3b8; }
+    .episode-complete p  { font-size: 14px; color: #64748b; margin-top: 8px; }
+    .play-again-btn {
+      margin-top: 20px;
+      padding: 10px 28px;
+      background: #1e3a5f;
+      border: 1px solid #2d6a9f;
+      border-radius: 8px;
+      color: #60a5fa;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .play-again-btn:hover { background: #2d4a6e; }
+
+    /* ── Spinner ── */
+    .spinner {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 768px) {
+      .tasks-grid { grid-template-columns: 1fr; }
+      .play-area  { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">📧</div>
+  <div>
+    <h1>Customer Support Ticket Triage</h1>
+    <p>OpenEnv — Real-world AI agent evaluation environment</p>
+  </div>
+  <div class="badge">OpenEnv v1.0</div>
+</header>
+
+<div class="container">
+
+  <!-- Task selector -->
+  <div class="section-title">Select a Task</div>
+  <div class="tasks-grid">
+    <div class="task-card task-easy" onclick="selectTask('task1_triage')">
+      <div class="diff-badge">EASY</div>
+      <h3>Quick Triage</h3>
+      <p>Classify ticket priority and route to the correct department.</p>
+      <div class="fields">
+        <span class="field-tag">priority</span>
+        <span class="field-tag">department</span>
+      </div>
+    </div>
+    <div class="task-card task-medium" onclick="selectTask('task2_routing')">
+      <div class="diff-badge">MEDIUM</div>
+      <h3>Smart Routing</h3>
+      <p>Add sentiment detection and escalation decision to triage.</p>
+      <div class="fields">
+        <span class="field-tag">priority</span>
+        <span class="field-tag">department</span>
+        <span class="field-tag">sentiment</span>
+        <span class="field-tag">escalate</span>
+      </div>
+    </div>
+    <div class="task-card task-hard" onclick="selectTask('task3_resolution')">
+      <div class="diff-badge">HARD</div>
+      <h3>Full Resolution</h3>
+      <p>Complete triage plus drafting a professional email response.</p>
+      <div class="fields">
+        <span class="field-tag">priority</span>
+        <span class="field-tag">department</span>
+        <span class="field-tag">response_draft</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Play area -->
+  <div class="play-area">
+
+    <!-- Ticket display -->
+    <div class="ticket-card">
+      <div class="ticket-header">
+        <span class="ticket-id" id="ticketId">—</span>
+        <div class="step-progress" id="stepProgress">
+          <div class="step-dot" id="dot0"></div>
+          <div class="step-dot" id="dot1"></div>
+          <div class="step-dot" id="dot2"></div>
+          <div class="step-dot" id="dot3"></div>
+          <div class="step-dot" id="dot4"></div>
+        </div>
+      </div>
+      <div class="ticket-body" id="ticketBody">
+        <div class="empty-state">
+          <div class="icon">🎯</div>
+          <h3>Select a task to begin</h3>
+          <p>Choose Easy, Medium, or Hard above to start triaging tickets.</p>
+        </div>
+        <div class="episode-complete" id="episodeComplete">
+          <h2>Episode Complete!</h2>
+          <div class="big-score" id="finalScore">—</div>
+          <p id="finalMsg">Mean score across 5 tickets</p>
+          <button class="play-again-btn" id="playAgainBtn" onclick="playAgain()">Play Again</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action panel -->
+    <div class="action-panel">
+      <div class="panel-header">Your Action</div>
+      <div class="panel-body">
+
+        <!-- Priority -->
+        <div class="form-group" id="fieldPriority">
+          <label class="form-label">Priority</label>
+          <select class="form-select" id="priority">
+            <option value="">— select —</option>
+            <option value="P0">P0 — Critical (system down)</option>
+            <option value="P1">P1 — High (major impact)</option>
+            <option value="P2">P2 — Medium (degraded)</option>
+            <option value="P3">P3 — Low (question / feature)</option>
+          </select>
+        </div>
+
+        <!-- Department -->
+        <div class="form-group" id="fieldDepartment">
+          <label class="form-label">Department</label>
+          <select class="form-select" id="department">
+            <option value="">— select —</option>
+            <option value="engineering">Engineering</option>
+            <option value="billing">Billing</option>
+            <option value="support">Support</option>
+            <option value="security">Security</option>
+            <option value="product">Product</option>
+            <option value="sales">Sales</option>
+          </select>
+        </div>
+
+        <!-- Sentiment (task 2) -->
+        <div class="form-group" id="fieldSentiment" style="display:none">
+          <label class="form-label">Customer Sentiment</label>
+          <select class="form-select" id="sentiment">
+            <option value="">— select —</option>
+            <option value="positive">Positive</option>
+            <option value="neutral">Neutral</option>
+            <option value="negative">Negative</option>
+            <option value="angry">Angry</option>
+          </select>
+        </div>
+
+        <!-- Escalate (task 2) -->
+        <div class="form-group" id="fieldEscalate" style="display:none">
+          <label class="form-label">Escalate to Manager?</label>
+          <div class="toggle-group">
+            <button class="toggle-btn" id="btnTrue"  onclick="setEscalate(true)">Yes — Escalate</button>
+            <button class="toggle-btn" id="btnFalse" onclick="setEscalate(false)">No — Handle normally</button>
+          </div>
+        </div>
+
+        <!-- Response draft (task 3) -->
+        <div class="form-group" id="fieldResponse" style="display:none">
+          <label class="form-label">Response Draft (80–300 words)</label>
+          <textarea class="form-textarea" id="response_draft" placeholder="Dear customer,&#10;&#10;Thank you for reaching out..."></textarea>
+          <div style="font-size:11px;color:#4a5568;margin-top:4px;" id="wordCount">0 words</div>
+        </div>
+
+        <button class="submit-btn" id="submitBtn" onclick="submitAction()" disabled>
+          Submit Action
+        </button>
+
+        <div class="reward-box" id="rewardBox">
+          <div class="reward-score-row">
+            <span class="reward-label">Step Score</span>
+            <span class="reward-score" id="rewardScore">—</span>
+          </div>
+          <div class="reward-bar-bg">
+            <div class="reward-bar-fill" id="rewardBar" style="width:0%"></div>
+          </div>
+          <div class="reward-feedback" id="rewardFeedback"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Score tracker -->
+  <div class="score-tracker">
+    <div>
+      <div class="total-label">Mean Score</div>
+      <div class="total-val" id="meanScore">—</div>
+    </div>
+    <div class="step-scores" id="stepScores">
+      <div class="step-score-chip" id="sc0">—</div>
+      <div class="step-score-chip" id="sc1">—</div>
+      <div class="step-score-chip" id="sc2">—</div>
+      <div class="step-score-chip" id="sc3">—</div>
+      <div class="step-score-chip" id="sc4">—</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ── State ───────────────────────────────────────────────────────────────────
+  let currentTask = null;
+  let currentStep = 0;
+  let stepScores  = [];
+  let escalateVal = null;
+  let episodeDone = false;
+
+  // ── Task selection ──────────────────────────────────────────────────────────
+  async function selectTask(taskId) {
+    document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active'));
+    const idx = ['task1_triage','task2_routing','task3_resolution'].indexOf(taskId);
+    document.querySelectorAll('.task-card')[idx].classList.add('active');
+
+    currentTask = taskId;
+    currentStep = 0;
+    stepScores  = [];
+    escalateVal = null;
+    episodeDone = false;
+
+    resetScoreUI();
+    document.getElementById('episodeComplete').classList.remove('visible');
+    document.getElementById('rewardBox').classList.remove('visible');
+
+    showFields(taskId);
+    setSubmitBtn(false);
+
+    const btn = document.getElementById('submitBtn');
+    btn.innerHTML = '<span class="spinner"></span> Starting…';
+
+    try {
+      const res = await fetch('/reset', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({task_id: taskId})
+      });
+      const data = await res.json();
+      renderTicket(data.observation);
+      updateDots(0);
+      btn.innerHTML = 'Submit Action';
+      setSubmitBtn(true);
+    } catch(e) {
+      btn.innerHTML = 'Submit Action';
+      alert('Error connecting to environment: ' + e.message);
+    }
+  }
+
+  // ── Render ticket ───────────────────────────────────────────────────────────
+  function renderTicket(obs) {
+    if (!obs) return;
+    const t = obs.ticket;
+
+    document.getElementById('ticketId').textContent = t.ticket_id;
+
+    const tierClass = `tier-${t.sender_tier}`;
+    const ts = new Date(t.timestamp).toLocaleString();
+
+    // Replace ticket body content (preserve episode-complete div)
+    const body = document.getElementById('ticketBody');
+    const complete = document.getElementById('episodeComplete');
+
+    // Remove old ticket content (everything except episodeComplete)
+    [...body.children].forEach(el => {
+      if (el.id !== 'episodeComplete') el.remove();
+    });
+
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `
+      <div class="ticket-subject">${escHtml(t.subject)}</div>
+      <div class="ticket-meta">
+        <span class="meta-chip">${escHtml(t.sender)}</span>
+        <span class="meta-chip ${tierClass}">${t.sender_tier}</span>
+        <span class="meta-chip">${escHtml(t.product)}</span>
+        <span class="meta-chip">${ts}</span>
+      </div>
+      <div class="ticket-message">${escHtml(t.body)}</div>
+    `;
+    body.insertBefore(wrap, complete);
+
+    // Clear form
+    document.getElementById('priority').value = '';
+    document.getElementById('department').value = '';
+    if (document.getElementById('sentiment'))
+      document.getElementById('sentiment').value = '';
+    document.getElementById('response_draft').value = '';
+    document.getElementById('wordCount').textContent = '0 words';
+    escalateVal = null;
+    document.getElementById('btnTrue').className  = 'toggle-btn';
+    document.getElementById('btnFalse').className = 'toggle-btn';
+    document.getElementById('rewardBox').classList.remove('visible');
+  }
+
+  // ── Submit action ───────────────────────────────────────────────────────────
+  async function submitAction() {
+    if (episodeDone) return;
+
+    const action = {};
+    action.priority   = document.getElementById('priority').value   || null;
+    action.department = document.getElementById('department').value || null;
+
+    if (currentTask === 'task2_routing') {
+      action.sentiment = document.getElementById('sentiment').value || null;
+      action.escalate  = escalateVal;
+    }
+    if (currentTask === 'task3_resolution') {
+      action.response_draft = document.getElementById('response_draft').value || null;
+    }
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Grading…';
+
+    try {
+      const res = await fetch('/step', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(action)
+      });
+      const data = await res.json();
+
+      showReward(data.reward, data.reward_breakdown, data.feedback);
+      stepScores.push(data.reward);
+      updateScoreUI();
+
+      currentStep++;
+      updateDots(currentStep);
+
+      if (data.done) {
+        episodeDone = true;
+        setTimeout(() => showEpisodeComplete(), 1200);
+        btn.innerHTML = 'Episode Complete';
+      } else {
+        renderTicket(data.observation);
+        btn.innerHTML = 'Submit Action';
+        btn.disabled = false;
+      }
+    } catch(e) {
+      btn.innerHTML = 'Submit Action';
+      btn.disabled = false;
+      alert('Error: ' + e.message);
+    }
+  }
+
+  // ── Reward display ──────────────────────────────────────────────────────────
+  function showReward(score, breakdown, feedback) {
+    const box  = document.getElementById('rewardBox');
+    const sc   = document.getElementById('rewardScore');
+    const bar  = document.getElementById('rewardBar');
+    const fb   = document.getElementById('rewardFeedback');
+
+    box.classList.add('visible');
+    sc.textContent = score.toFixed(2);
+    sc.className = 'reward-score ' + (score >= 0.75 ? 'score-great' : score >= 0.4 ? 'score-ok' : 'score-poor');
+
+    bar.style.width = (score * 100) + '%';
+    bar.style.background = score >= 0.75 ? '#22c55e' : score >= 0.4 ? '#f59e0b' : '#ef4444';
+
+    fb.textContent = feedback;
+  }
+
+  // ── Episode complete ────────────────────────────────────────────────────────
+  function showEpisodeComplete() {
+    const mean = stepScores.reduce((a,b)=>a+b,0) / stepScores.length;
+    const complete = document.getElementById('episodeComplete');
+    const fs = document.getElementById('finalScore');
+    fs.textContent = mean.toFixed(2);
+    fs.className = 'big-score ' + (mean >= 0.75 ? 'score-great' : mean >= 0.4 ? 'score-ok' : 'score-poor');
+    complete.classList.add('visible');
+  }
+
+  function playAgain() {
+    if (currentTask) selectTask(currentTask);
+  }
+
+  // ── Score tracker UI ────────────────────────────────────────────────────────
+  function updateScoreUI() {
+    const mean = stepScores.length
+      ? (stepScores.reduce((a,b)=>a+b,0)/stepScores.length).toFixed(2)
+      : '—';
+    document.getElementById('meanScore').textContent = mean;
+
+    for (let i = 0; i < 5; i++) {
+      const chip = document.getElementById('sc' + i);
+      if (i < stepScores.length) {
+        chip.textContent = stepScores[i].toFixed(2);
+        chip.classList.add('filled');
+        const s = stepScores[i];
+        chip.style.color = s >= 0.75 ? '#22c55e' : s >= 0.4 ? '#f59e0b' : '#ef4444';
+        chip.style.borderColor = s >= 0.75 ? '#22c55e55' : s >= 0.4 ? '#f59e0b55' : '#ef444455';
+      } else {
+        chip.textContent = '—';
+        chip.classList.remove('filled');
+        chip.style.color = '';
+        chip.style.borderColor = '';
+      }
+    }
+  }
+
+  function resetScoreUI() {
+    document.getElementById('meanScore').textContent = '—';
+    for (let i = 0; i < 5; i++) {
+      const chip = document.getElementById('sc' + i);
+      chip.textContent = '—';
+      chip.classList.remove('filled');
+      chip.style.color = '';
+      chip.style.borderColor = '';
+    }
+  }
+
+  // ── Step dots ───────────────────────────────────────────────────────────────
+  function updateDots(activeIdx) {
+    for (let i = 0; i < 5; i++) {
+      const dot = document.getElementById('dot' + i);
+      dot.className = 'step-dot';
+      if (i < activeIdx)      dot.classList.add('done');
+      else if (i === activeIdx) dot.classList.add('active');
+    }
+  }
+
+  // ── Show/hide fields by task ─────────────────────────────────────────────────
+  function showFields(taskId) {
+    document.getElementById('fieldSentiment').style.display = taskId === 'task2_routing' ? '' : 'none';
+    document.getElementById('fieldEscalate').style.display  = taskId === 'task2_routing' ? '' : 'none';
+    document.getElementById('fieldResponse').style.display  = taskId === 'task3_resolution' ? '' : 'none';
+  }
+
+  // ── Escalate toggle ──────────────────────────────────────────────────────────
+  function setEscalate(val) {
+    escalateVal = val;
+    document.getElementById('btnTrue').className  = 'toggle-btn' + (val === true  ? ' selected-true'  : '');
+    document.getElementById('btnFalse').className = 'toggle-btn' + (val === false ? ' selected-false' : '');
+  }
+
+  function setSubmitBtn(enabled) {
+    document.getElementById('submitBtn').disabled = !enabled;
+  }
+
+  // ── Word count ───────────────────────────────────────────────────────────────
+  document.getElementById('response_draft').addEventListener('input', function() {
+    const words = this.value.trim() ? this.value.trim().split(/\s+/).length : 0;
+    const el = document.getElementById('wordCount');
+    el.textContent = words + ' words';
+    el.style.color = words >= 80 && words <= 300 ? '#22c55e' : words > 300 ? '#ef4444' : '#64748b';
+  });
+
+  // ── Helpers ──────────────────────────────────────────────────────────────────
+  function escHtml(s) {
+    return String(s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
+</body>
+</html>

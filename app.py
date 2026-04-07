@@ -20,7 +20,8 @@ from typing import Any, Dict, Optional
 import yaml
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import PlainTextResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from environment import SupportTriageEnv
@@ -45,6 +46,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Serve static frontend
+_static_dir = Path(__file__).parent / "static"
+if _static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(_static_dir)), name="static")
 
 # ── Single shared environment instance (stateful per deployment) ─────────────
 # For multi-user scenarios use session tokens and a dict of envs.
@@ -75,7 +81,14 @@ class StepResponse(BaseModel):
 # ── Endpoints ────────────────────────────────────────────────────────────────
 
 @app.get("/", tags=["meta"])
-def root() -> Dict[str, Any]:
+def root() -> HTMLResponse:
+    ui_path = Path(__file__).parent / "static" / "index.html"
+    if ui_path.exists():
+        return HTMLResponse(content=ui_path.read_text(), status_code=200)
+    return HTMLResponse(content='<a href="/docs">API Docs</a>', status_code=200)
+
+@app.get("/api", tags=["meta"])
+def api_info() -> Dict[str, Any]:
     return {
         "name": "customer-support-ticket-triage",
         "version": "1.0.0",
