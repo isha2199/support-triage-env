@@ -19,7 +19,7 @@ dependencies = [
 ]
 
 [project.scripts]
-serve = "server.app:serve"
+serve = "server.app:main"
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0"]

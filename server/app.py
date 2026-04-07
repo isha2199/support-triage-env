@@ -331,7 +331,10 @@ def serve_openenv_yaml() -> str:
 def serve():
     import uvicorn
     port = int(os.environ.get("PORT", 7860))
-    uvicorn.run("app:app", host="0.0.0.0", port=port, reload=False)
+    uvicorn.run("server.app:app", host="0.0.0.0", port=port, reload=False)
+
+def main():
+    serve()
 
 if __name__ == "__main__":
-    serve()
+    main()
