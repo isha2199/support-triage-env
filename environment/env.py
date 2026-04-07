@@ -122,9 +122,8 @@ class SupportTriageEnv:
             "expected": ticket_expected,
         }
         if is_done:
-            info["episode_score"] = round(
-                self._total_reward / len(self._tickets), 4
-            )
+            raw = self._total_reward / len(self._tickets)
+            info["episode_score"] = round(max(1e-6, min(1.0 - 1e-6, raw)), 6)
 
         return StepResult(
             observation=next_obs,

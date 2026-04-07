@@ -29,7 +29,7 @@ tasks:
       Classify the ticket priority (P0–P3) and route it to the correct
       department. Two-field action; partial credit for adjacent priority.
     max_steps: 5
-    expected_score_range: [0.60, 1.00]
+    expected_score_range: [0.60, 0.999999]
     reward_weights:
       priority: 0.50
       department: 0.50
@@ -120,8 +120,8 @@ reward:
   range: [0.0, 1.0]
   frequency: per_step
   description: >
-    Each step yields a reward in [0.0, 1.0] based on how accurately the
-    agent triaged the ticket. Partial credit is awarded for adjacent priority
+    Each step yields a reward strictly in (0.0, 1.0) — endpoints excluded —
+    based on how accurately the agent triaged the ticket. Partial credit is awarded for adjacent priority
     levels (e.g. P1 when correct is P0 → 50% priority credit) and proportional
     response keyword coverage. The episode score is the mean over all steps.
   signal_type: dense
