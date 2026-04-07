@@ -29,7 +29,7 @@ tasks:
       Classify the ticket priority (P0–P3) and route it to the correct
       department. Two-field action; partial credit for adjacent priority.
     max_steps: 5
-    expected_score_range: [0.60, 0.999999]
+    expected_score_range: [0.60, 0.999]
     reward_weights:
       priority: 0.50
       department: 0.50
