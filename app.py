@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 import yaml
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -124,13 +124,14 @@ def list_tasks() -> Dict[str, Any]:
 
 
 @app.post("/reset", tags=["env"])
-def reset(request: ResetRequest) -> ResetResponse:
+def reset(request: Optional[ResetRequest] = Body(None)) -> ResetResponse:
+    task_id = request.task_id if request else "task1_triage"
     try:
-        obs = _env.reset(task_id=request.task_id)
+        obs = _env.reset(task_id=task_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     state = _env.state()
-    return ResetResponse(observation=obs, task_id=request.task_id, episode=state.episode)
+    return ResetResponse(observation=obs, task_id=task_id, episode=state.episode)
 
 
 @app.post("/step", tags=["env"])
