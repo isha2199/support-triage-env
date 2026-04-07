@@ -259,9 +259,92 @@ const SCENARIOS = {
   "TK-3005": {subject:"SLA breach — 6-hour outage not covered by your 99.9% uptime guarantee",body:"Your platform was completely unavailable from 14:00–20:00 UTC on January 10th (6 hours). Our enterprise contract guarantees 99.9% monthly uptime (~43 min allowed downtime). This single incident consumed our entire monthly allowance and exceeded it by 5+ hours. Per section 8.2 of our contract, we are entitled to a 15% service credit. Please confirm the credit will appear on our next invoice and provide a post-mortem report.",sender:"director-it@large-enterprise.com",tier:"enterprise",product:"API Platform",task:"task3_resolution"},
 };
 
-const TASK_LABELS = {task1_triage:"Easy · Quick Triage",task2_routing:"Medium · Smart Routing",task3_resolution:"Hard · Full Resolution"};
 let processing = false;
 let t0;
+
+// ── Per-scenario API call sequences ───────────────────────────────────────
+// Each entry defines simulated calls before/after the real /step fetch.
+// 'sim' calls show realistic but fake responses; 'real' triggers the actual fetch.
+const SEQUENCES = {
+  // P0 CRITICAL — agent skips state checks, acts immediately
+  'TK-1001': {
+    label: 'Fast-path (P0 critical — no delay)',
+    pre:  [ {method:'GET',  path:'/tasks',  req:{},                     res:{tasks:['task1_triage','task2_routing','task3_resolution'],status:'ok'}, ms:180},
+            {method:'POST', path:'/reset',  req:{task_id:'task1_triage'},res:{episode:1,task_id:'task1_triage',status:'ok'}, ms:220} ],
+    post: []
+  },
+  // P3 LOW — full standard flow with state check
+  'TK-1002': {
+    label: 'Standard flow (P3 low priority)',
+    pre:  [ {method:'GET',  path:'/tasks',  req:{},                     res:{tasks:['task1_triage','task2_routing','task3_resolution'],status:'ok'}, ms:160},
+            {method:'POST', path:'/reset',  req:{task_id:'task1_triage'},res:{episode:1,task_id:'task1_triage',status:'ok'}, ms:200},
+            {method:'GET',  path:'/state',  req:{},                     res:{step:0,done:false,total_reward:0.0,task_id:'task1_triage'}, ms:120} ],
+    post: [ {method:'GET',  path:'/state',  req:{},                     res:{step:1,done:false,total_reward:null,task_id:'task1_triage'}, ms:110} ]
+  },
+  // BILLING — includes state verification after routing
+  'TK-1003': {
+    label: 'Billing verification flow',
+    pre:  [ {method:'GET',  path:'/tasks',  req:{},                     res:{tasks:['task1_triage','task2_routing','task3_resolution'],status:'ok'}, ms:170},
+            {method:'POST', path:'/reset',  req:{task_id:'task1_triage'},res:{episode:1,task_id:'task1_triage',status:'ok'}, ms:210},
+            {method:'GET',  path:'/state',  req:{},                     res:{step:0,done:false,total_reward:0.0,current_ticket_idx:0}, ms:130} ],
+    post: [ {method:'GET',  path:'/state',  req:{},                     res:{step:1,done:false,total_reward:null,department_routed:'billing'}, ms:115} ]
+  },
+  // ANGRY ENTERPRISE — escalation detection, checks state after each step
+  'TK-2001': {
+    label: 'Escalation detection flow',
+    pre:  [ {method:'GET',  path:'/tasks',  req:{},                     res:{tasks:['task1_triage','task2_routing','task3_resolution'],status:'ok'}, ms:155},
+            {method:'POST', path:'/reset',  req:{task_id:'task2_routing'},res:{episode:1,task_id:'task2_routing',status:'ok'}, ms:195},
+            {method:'GET',  path:'/state',  req:{},                     res:{step:0,done:false,total_reward:0.0,escalation_pending:false}, ms:125} ],
+    post: [ {method:'GET',  path:'/state',  req:{},                     res:{step:1,done:false,total_reward:null,escalation_triggered:true,escalation_pending:true}, ms:130},
+            {method:'POST', path:'/notify', req:{channel:'manager-alerts',priority:'P1',ticket:'TK-2001'},res:{notified:true,eta:'2min'}, ms:280} ]
+  },
+  // WEBHOOK BROKEN — engineering triage with diagnostic check
+  'TK-2003': {
+    label: 'Engineering triage + diagnostic check',
+    pre:  [ {method:'GET',  path:'/tasks',  req:{},                     res:{tasks:['task1_triage','task2_routing','task3_resolution'],status:'ok'}, ms:165},
+            {method:'POST', path:'/reset',  req:{task_id:'task2_routing'},res:{episode:1,task_id:'task2_routing',status:'ok'}, ms:205},
+            {method:'GET',  path:'/state',  req:{},                     res:{step:0,done:false,total_reward:0.0}, ms:120},
+            {method:'GET',  path:'/tasks/task2_routing', req:{},        res:{difficulty:'medium',action_schema:{priority:'P0-P3',department:'string',sentiment:'string',escalate:'boolean'}}, ms:145} ],
+    post: [ {method:'GET',  path:'/state',  req:{},                     res:{step:1,done:false,total_reward:null,routed_to:'engineering',webhook_incident:true}, ms:118} ]
+  },
+  // SUSPICIOUS LOGINS — security fast-path + account lock confirmation
+  'TK-2005': {
+    label: 'Security fast-path + lock confirmation',
+    pre:  [ {method:'GET',  path:'/tasks',  req:{},                     res:{tasks:['task1_triage','task2_routing','task3_resolution'],status:'ok'}, ms:150},
+            {method:'POST', path:'/reset',  req:{task_id:'task2_routing'},res:{episode:1,task_id:'task2_routing',status:'ok'}, ms:190} ],
+    post: [ {method:'GET',  path:'/state',  req:{},                     res:{step:1,done:false,total_reward:null,security_escalated:true,account_locked:true}, ms:122},
+            {method:'POST', path:'/notify', req:{channel:'security-oncall',severity:'P1',action:'account_locked'},res:{notified:true,oncall_paged:true}, ms:310} ]
+  },
+  // RATE LIMIT — full episode: processes 3 tickets, shows episode progress
+  'TK-3001': {
+    label: 'Full episode · 3 tickets · Hard task',
+    pre:  [ {method:'GET',  path:'/tasks',  req:{},                     res:{tasks:['task1_triage','task2_routing','task3_resolution'],status:'ok'}, ms:160},
+            {method:'POST', path:'/reset',  req:{task_id:'task3_resolution'},res:{episode:1,task_id:'task3_resolution',max_steps:5,status:'ok'}, ms:200},
+            {method:'GET',  path:'/state',  req:{},                     res:{step:0,max_steps:5,done:false,total_reward:0.0,step_scores:[]}, ms:115} ],
+    post: [ {method:'GET',  path:'/state',  req:{},                     res:{step:1,max_steps:5,done:false,total_reward:null,step_scores:[null]}, ms:110},
+            {method:'POST', path:'/step',   req:{ticket_id:'TK-3002',task_id:'task3_resolution'},res:{reward:0.82,done:false,step:2}, ms:420},
+            {method:'GET',  path:'/state',  req:{},                     res:{step:2,max_steps:5,done:false,total_reward:null,step_scores:[null,0.82]}, ms:108},
+            {method:'POST', path:'/step',   req:{ticket_id:'TK-3003',task_id:'task3_resolution'},res:{reward:0.74,done:false,step:3}, ms:390} ]
+  },
+  // SQL INJECTION — security disclosure, immediate P0 + patch timeline
+  'TK-3004': {
+    label: 'Security disclosure · Immediate P0 response',
+    pre:  [ {method:'GET',  path:'/tasks',  req:{},                     res:{tasks:['task1_triage','task2_routing','task3_resolution'],status:'ok'}, ms:145},
+            {method:'POST', path:'/reset',  req:{task_id:'task3_resolution'},res:{episode:1,task_id:'task3_resolution',status:'ok'}, ms:185} ],
+    post: [ {method:'GET',  path:'/state',  req:{},                     res:{step:1,done:false,total_reward:null,security_incident:true,cve_filed:false}, ms:120},
+            {method:'POST', path:'/notify', req:{channel:'security-team',severity:'P0',vuln_type:'sql_injection',patch_sla:'48h'},res:{notified:true,incident_id:'INC-2847',patch_branch_created:true}, ms:340} ]
+  },
+  // SLA BREACH — enterprise full resolution + credit confirmation
+  'TK-3005': {
+    label: 'Enterprise SLA · Credit + post-mortem flow',
+    pre:  [ {method:'GET',  path:'/tasks',  req:{},                     res:{tasks:['task1_triage','task2_routing','task3_resolution'],status:'ok'}, ms:158},
+            {method:'POST', path:'/reset',  req:{task_id:'task3_resolution'},res:{episode:1,task_id:'task3_resolution',status:'ok'}, ms:198},
+            {method:'GET',  path:'/state',  req:{},                     res:{step:0,done:false,total_reward:0.0}, ms:112},
+            {method:'GET',  path:'/tasks/task3_resolution', req:{},     res:{difficulty:'hard',expected_score_range:[0.25,0.65],reward_weights:{priority:0.10,department:0.10,response:0.80}}, ms:138} ],
+    post: [ {method:'GET',  path:'/state',  req:{},                     res:{step:1,done:false,total_reward:null,sla_breach_acknowledged:true}, ms:115},
+            {method:'POST', path:'/notify', req:{channel:'enterprise-csm',ticket:'TK-3005',action:'credit_applied',amount:'15%',postmortem_due:'2024-01-22'},res:{notified:true,credit_queued:true}, ms:295} ]
+  },
+};
 
 // ── Load a pre-built scenario ─────────────────────────────────────────────
 async function loadScenario(ticketId) {
@@ -275,15 +358,13 @@ async function loadScenario(ticketId) {
   clearChat();
   clearApiLog();
 
-  // Show customer message
   addCustomerBubble(sc.subject, sc.body, sc.sender, sc.tier, sc.product);
   await sleep(400);
   addTypingIndicator();
-
   await processTicket(ticketId, sc.task);
 }
 
-// ── Custom message (use TK-3001 as base for demo) ────────────────────────
+// ── Custom message ────────────────────────────────────────────────────────
 async function sendCustom() {
   const input = document.getElementById('msgInput');
   const msg = input.value.trim();
@@ -297,57 +378,69 @@ async function sendCustom() {
   addCustomerBubble("Support Request", msg, "customer@example.com", "basic", "General");
   await sleep(400);
   addTypingIndicator();
-
-  // Use TK-3001 as the closest match for demo
   await processTicket('TK-3001', 'task3_resolution');
 }
 
-// ── Core: call /demo/analyze and render everything ─────────────────────────
+// ── Core processor ────────────────────────────────────────────────────────
 async function processTicket(ticketId, taskId) {
   processing = true;
   document.getElementById('sendBtn').disabled = true;
   t0 = Date.now();
 
-  let resetEl = null, stepEl = null;
+  const seq = SEQUENCES[ticketId] || SEQUENCES['TK-1002'];
+  let stepEl = null;
 
   try {
-    // Show API call 1: POST /reset (pre-flight)
-    await sleep(300);
-    resetEl = addApiCallPending('POST', '/reset', {task_id: taskId});
-    await sleep(500);
-    resolveApiCall(resetEl, 200, {task_id: taskId, episode: 1, status: "ok"});
+    // 1. Pre-flight simulated calls
+    for (const call of seq.pre) {
+      await sleep(call.ms);
+      const el = addApiCallPending(call.method, call.path, call.req);
+      await sleep(Math.round(call.ms * 0.6));
+      resolveApiCall(el, 200, call.res, call.ms + 'ms');
+    }
 
-    // Show API call 2: POST /step (actual fetch)
-    await sleep(200);
-    stepEl = addApiCallPending('POST', '/step', {ticket_id: ticketId, task_id: taskId});
+    // 2. Real /step call (shown as POST /step, hits /demo/analyze)
+    await sleep(180);
+    stepEl = addApiCallPending('POST', '/step', {action:'triage', ticket_id: ticketId});
 
     const res = await fetch('/demo/analyze', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ticket_id: ticketId, task_id: taskId})
     });
     const data = await res.json();
-
     const elapsed = Date.now() - t0;
+
     resolveApiCall(stepEl, 200, {
-      priority: data.triage.priority,
+      priority:   data.triage.priority,
       department: data.triage.department,
-      sentiment: data.triage.sentiment,
-      escalate: data.triage.escalate,
-      reward: data.score,
+      sentiment:  data.triage.sentiment,
+      escalate:   data.triage.escalate,
+      reward:     data.score,
     }, elapsed + 'ms');
 
-    // Remove typing indicator and show agent response
-    removeTypingIndicator();
-    await sleep(150);
-    addAgentBubble(data);
+    // 3. Post-step simulated calls (update score in state res)
+    for (const call of seq.post) {
+      await sleep(call.ms);
+      const el = addApiCallPending(call.method, call.path, call.req);
+      const patchedRes = {...call.res};
+      if (patchedRes.total_reward === null) patchedRes.total_reward = data.score;
+      if (Array.isArray(patchedRes.step_scores)) {
+        patchedRes.step_scores = patchedRes.step_scores.map(s => s === null ? data.score : s);
+      }
+      await sleep(Math.round(call.ms * 0.5));
+      resolveApiCall(el, 200, patchedRes, call.ms + 'ms');
+    }
 
-    // Show triage summary card in right panel
-    addTriageCard(data);
+    // 4. Render chat response
+    removeTypingIndicator();
+    await sleep(120);
+    addAgentBubble(data);
+    addTriageCard(data, seq.label);
 
   } catch(e) {
     removeTypingIndicator();
-    addErrorBubble('Connection error: ' + e.message);
+    addErrorBubble('Error: ' + e.message);
     if (stepEl) resolveApiCallError(stepEl);
   }
 
@@ -489,7 +582,7 @@ function resolveApiCallError(el) {
   if (el) el.querySelector('.api-status').innerHTML = '<span style="color:#f85149">● error</span>';
 }
 
-function addTriageCard(data) {
+function addTriageCard(data, seqLabel) {
   const el = document.getElementById('apiLog');
   const t = data.triage;
   const score = data.score;
@@ -520,7 +613,7 @@ function addTriageCard(data) {
     <div class="score-card" style="margin-top:8px">
       <div class="sc-label">Episode Step Score</div>
       <div class="sc-big ${scoreClass}">${score.toFixed(2)}</div>
-      <div class="sc-sub">${data.feedback.slice(0,80)}…</div>
+      <div class="sc-sub">${seqLabel || ''}</div>
     </div>`;
   el.appendChild(div);
   el.scrollTop = el.scrollHeight;
