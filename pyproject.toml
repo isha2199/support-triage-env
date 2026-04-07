@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=68.0"]
-build-backend = "setuptools.backends.legacy:build"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "customer-support-ticket-triage"
@@ -19,11 +19,10 @@ dependencies = [
 ]
 
 [project.scripts]
-serve = "server.app:main"
+server = "server.app:main"
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0"]
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["environment*"]
+[tool.hatch.build.targets.wheel]
+packages = ["environment", "server"]
