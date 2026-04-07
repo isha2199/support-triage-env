@@ -1,13 +1,21 @@
 """
 Deterministic graders for all three tasks.
 Each grader returns (score: float, breakdown: dict, feedback: str).
-All scores are in [0.0, 1.0].
+All scores are strictly in (0.0, 1.0) — endpoints excluded.
 """
 from __future__ import annotations
 import re
 from typing import Any, Dict, Tuple
 
 from .models import Action
+
+_SCORE_MIN = 1e-6
+_SCORE_MAX = 1.0 - 1e-6
+
+
+def _clip(score: float) -> float:
+    """Clamp score to strictly open interval (0, 1) as required by the evaluator."""
+    return max(_SCORE_MIN, min(_SCORE_MAX, score))
 
 # Priority adjacency — being one level off earns partial credit
 _PRIORITY_RANK: Dict[str, int] = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
@@ -37,7 +45,7 @@ def grade_task1(action: Action, expected: Dict[str, Any]) -> Tuple[float, Dict[s
     # Department (0.50)
     breakdown["department"] = 0.50 if action.department == expected["department"] else 0.0
 
-    score = sum(breakdown.values())
+    score = _clip(sum(breakdown.values()))
     parts = []
     parts.append(
         f"priority={'✓' if breakdown['priority'] == 0.50 else ('~' if breakdown['priority'] > 0 else '✗')} "
@@ -48,7 +56,7 @@ def grade_task1(action: Action, expected: Dict[str, Any]) -> Tuple[float, Dict[s
         f"(got={action.department}, want={expected['department']})"
     )
     feedback = " | ".join(parts)
-    return round(score, 4), breakdown, feedback
+    return round(score, 6), breakdown, feedback
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -72,7 +80,7 @@ def grade_task2(action: Action, expected: Dict[str, Any]) -> Tuple[float, Dict[s
     exp_escalate = expected["escalate"]
     breakdown["escalate"] = 0.20 if got_escalate == exp_escalate else 0.0
 
-    score = sum(breakdown.values())
+    score = _clip(sum(breakdown.values()))
     parts = [
         f"priority={'✓' if breakdown['priority'] == 0.30 else ('~' if breakdown['priority'] > 0 else '✗')}({action.priority}/{expected['priority']})",
         f"dept={'✓' if breakdown['department'] == 0.30 else '✗'}({action.department}/{expected['department']})",
@@ -80,7 +88,7 @@ def grade_task2(action: Action, expected: Dict[str, Any]) -> Tuple[float, Dict[s
         f"escalate={'✓' if breakdown['escalate'] == 0.20 else '✗'}({got_escalate}/{exp_escalate})",
     ]
     feedback = " | ".join(parts)
-    return round(score, 4), breakdown, feedback
+    return round(score, 6), breakdown, feedback
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -174,7 +182,7 @@ def grade_task3(action: Action, expected: Dict[str, Any]) -> Tuple[float, Dict[s
     else:
         breakdown["resp_length"] = 0.0
 
-    score = sum(breakdown.values())
+    score = _clip(sum(breakdown.values()))
 
     resp_score = sum(v for k, v in breakdown.items() if k.startswith("resp_"))
     parts = [
@@ -189,7 +197,7 @@ def grade_task3(action: Action, expected: Dict[str, Any]) -> Tuple[float, Dict[s
         f"len={words}w={'✓' if breakdown['resp_length'] == 0.12 else '~' if breakdown['resp_length'] > 0 else '✗'}]",
     ]
     feedback = " | ".join(parts)
-    return round(score, 4), breakdown, feedback
+    return round(score, 6), breakdown, feedback
 
 
 # ─────────────────────────────────────────────────────────────────────────────
