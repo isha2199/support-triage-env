@@ -3,812 +3,555 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Customer Support Ticket Triage — OpenEnv Demo</title>
+  <title>Support Triage — OpenEnv Live Demo</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #0f1117;
-      color: #e2e8f0;
-      min-height: 100vh;
-    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0d1117;color:#e2e8f0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
 
     /* ── Header ── */
-    header {
-      background: linear-gradient(135deg, #1e3a5f 0%, #0f2744 100%);
-      border-bottom: 1px solid #2d4a6e;
-      padding: 20px 32px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-    header .logo { font-size: 32px; }
-    header h1 { font-size: 20px; font-weight: 700; color: #fff; }
-    header p { font-size: 13px; color: #94a3b8; margin-top: 2px; }
-    .badge {
-      margin-left: auto;
-      background: #1a3a5c;
-      border: 1px solid #2d6a9f;
-      color: #60a5fa;
-      font-size: 11px;
-      font-weight: 600;
-      padding: 4px 10px;
-      border-radius: 20px;
-      letter-spacing: 0.5px;
-    }
+    header{background:#161b22;border-bottom:1px solid #30363d;padding:0 24px;height:56px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+    .logo{font-size:24px}
+    .h-title{font-size:15px;font-weight:700;color:#f0f6fc}
+    .h-sub{font-size:12px;color:#8b949e;margin-top:1px}
+    .h-badge{margin-left:auto;background:#1f6feb22;border:1px solid #1f6feb;color:#58a6ff;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px}
 
-    /* ── Layout ── */
-    .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+    /* ── Scenario bar ── */
+    .scenario-bar{background:#161b22;border-bottom:1px solid #30363d;padding:10px 24px;display:flex;align-items:center;gap:10px;flex-shrink:0;overflow-x:auto}
+    .sb-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#8b949e;white-space:nowrap}
+    .sc-chip{flex-shrink:0;padding:5px 12px;border-radius:20px;border:1px solid #30363d;background:#161b22;color:#8b949e;font-size:12px;cursor:pointer;transition:all .15s;white-space:nowrap}
+    .sc-chip:hover{border-color:#58a6ff;color:#58a6ff}
+    .sc-chip.active{background:#1f3a5f;border-color:#58a6ff;color:#58a6ff;font-weight:600}
+    .sc-chip .diff{font-size:10px;font-weight:700;padding:1px 5px;border-radius:8px;margin-right:5px}
+    .diff-easy{background:#238636;color:#3fb950}
+    .diff-medium{background:#9a6700;color:#e3b341}
+    .diff-hard{background:#8b0000;color:#f85149}
 
-    /* ── Task selector ── */
-    .section-title {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 1.2px;
-      text-transform: uppercase;
-      color: #64748b;
-      margin-bottom: 12px;
-    }
-    .tasks-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
-      margin-bottom: 32px;
-    }
-    .task-card {
-      background: #1a1f2e;
-      border: 2px solid #2a3142;
-      border-radius: 12px;
-      padding: 18px;
-      cursor: pointer;
-      transition: all 0.2s;
-      position: relative;
-      overflow: hidden;
-    }
-    .task-card:hover { border-color: #4a6fa5; transform: translateY(-2px); }
-    .task-card.active { border-color: var(--task-color); background: var(--task-bg); }
-    .task-card .diff-badge {
-      display: inline-block;
-      font-size: 10px;
-      font-weight: 700;
-      padding: 2px 8px;
-      border-radius: 10px;
-      margin-bottom: 8px;
-      background: var(--task-color);
-      color: #fff;
-      letter-spacing: 0.5px;
-    }
-    .task-card h3 { font-size: 15px; font-weight: 700; color: #f1f5f9; margin-bottom: 4px; }
-    .task-card p { font-size: 12px; color: #94a3b8; line-height: 1.5; }
-    .task-card .fields {
-      margin-top: 10px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-    }
-    .task-card .field-tag {
-      font-size: 10px;
-      padding: 2px 7px;
-      background: #252c3d;
-      border: 1px solid #3a4257;
-      border-radius: 6px;
-      color: #94a3b8;
-    }
-    .task-easy  { --task-color: #22c55e; --task-bg: #0f2a1a; }
-    .task-medium{ --task-color: #f59e0b; --task-bg: #2a1f0a; }
-    .task-hard  { --task-color: #ef4444; --task-bg: #2a0f0f; }
+    /* ── Main split ── */
+    .main{display:grid;grid-template-columns:1fr 420px;flex:1;min-height:0}
 
-    /* ── Main play area ── */
-    .play-area {
-      display: grid;
-      grid-template-columns: 1fr 380px;
-      gap: 20px;
-    }
+    /* ── LEFT: Chat ── */
+    .chat-panel{display:flex;flex-direction:column;border-right:1px solid #30363d}
+    .panel-header{background:#161b22;border-bottom:1px solid #30363d;padding:12px 20px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+    .panel-icon{font-size:18px}
+    .panel-title{font-size:13px;font-weight:600;color:#f0f6fc}
+    .panel-sub{font-size:11px;color:#8b949e;margin-top:1px}
+    .status-dot{width:8px;height:8px;border-radius:50%;background:#3fb950;margin-left:auto;box-shadow:0 0 6px #3fb95088}
 
-    /* ── Ticket card ── */
-    .ticket-card {
-      background: #1a1f2e;
-      border: 1px solid #2a3142;
-      border-radius: 12px;
-      overflow: hidden;
-    }
-    .ticket-header {
-      background: #151a27;
-      padding: 14px 20px;
-      border-bottom: 1px solid #2a3142;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .ticket-id { font-size: 11px; color: #64748b; font-family: monospace; }
-    .step-progress { display: flex; gap: 6px; }
-    .step-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: #2a3142;
-      transition: background 0.3s;
-    }
-    .step-dot.done { background: #22c55e; }
-    .step-dot.active { background: #60a5fa; }
+    .chat-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px}
+    .chat-messages::-webkit-scrollbar{width:4px}
+    .chat-messages::-webkit-scrollbar-track{background:transparent}
+    .chat-messages::-webkit-scrollbar-thumb{background:#30363d;border-radius:2px}
 
-    .ticket-body { padding: 20px; }
-    .ticket-subject {
-      font-size: 17px;
-      font-weight: 700;
-      color: #f1f5f9;
-      margin-bottom: 14px;
-      line-height: 1.4;
-    }
-    .ticket-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 16px;
-    }
-    .meta-chip {
-      font-size: 11px;
-      padding: 3px 10px;
-      border-radius: 20px;
-      background: #252c3d;
-      border: 1px solid #3a4257;
-      color: #94a3b8;
-    }
-    .meta-chip.tier-enterprise { border-color: #7c3aed; color: #a78bfa; background: #1e1a2e; }
-    .meta-chip.tier-basic      { border-color: #2563eb; color: #60a5fa; background: #111a2e; }
-    .meta-chip.tier-free       { border-color: #475569; color: #94a3b8; }
-    .ticket-message {
-      background: #151a27;
-      border: 1px solid #2a3142;
-      border-radius: 8px;
-      padding: 14px 16px;
-      font-size: 14px;
-      color: #cbd5e1;
-      line-height: 1.7;
-      white-space: pre-wrap;
-    }
+    /* Empty state */
+    .empty-chat{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#8b949e;text-align:center;gap:8px}
+    .empty-chat .e-icon{font-size:40px;opacity:.4}
+    .empty-chat p{font-size:13px;max-width:260px;line-height:1.6}
 
-    /* ── Action panel ── */
-    .action-panel {
-      background: #1a1f2e;
-      border: 1px solid #2a3142;
-      border-radius: 12px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-    .panel-header {
-      background: #151a27;
-      padding: 14px 20px;
-      border-bottom: 1px solid #2a3142;
-      font-size: 13px;
-      font-weight: 600;
-      color: #94a3b8;
-      letter-spacing: 0.3px;
-    }
-    .panel-body { padding: 16px; flex: 1; overflow-y: auto; }
+    /* Message bubbles */
+    .msg{display:flex;gap:10px;max-width:88%}
+    .msg.customer{align-self:flex-end;flex-direction:row-reverse}
+    .msg.agent{align-self:flex-start}
+    .msg .avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+    .customer .avatar{background:#1f3a5f;border:1px solid #58a6ff}
+    .agent .avatar{background:#1a2d1a;border:1px solid #3fb950}
+    .bubble{padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.6}
+    .customer .bubble{background:#1f3a5f;border:1px solid #1a3a6e;color:#cdd9e5;border-bottom-right-radius:3px}
+    .agent .bubble{background:#1a2310;border:1px solid #2a3d1a;color:#cdd9e5;border-bottom-left-radius:3px}
+    .bubble .b-subject{font-weight:700;color:#f0f6fc;margin-bottom:6px;font-size:14px}
+    .bubble .b-meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+    .b-tag{font-size:10px;padding:2px 7px;border-radius:10px;background:#0d1117;border:1px solid #30363d;color:#8b949e}
+    .b-tag.ent{border-color:#8957e5;color:#d2a8ff}
+    .b-tag.basic{border-color:#1f6feb;color:#79c0ff}
+    .bubble .b-body{color:#adbac7;line-height:1.7;white-space:pre-wrap}
 
-    .form-group { margin-bottom: 14px; }
-    .form-label {
-      display: block;
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: #64748b;
-      margin-bottom: 6px;
-    }
-    .form-select, .form-textarea {
-      width: 100%;
-      background: #0f1117;
-      border: 1px solid #2a3142;
-      border-radius: 8px;
-      color: #e2e8f0;
-      font-size: 14px;
-      padding: 9px 12px;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    .form-select:focus, .form-textarea:focus { border-color: #3b82f6; }
-    .form-textarea { min-height: 130px; resize: vertical; font-family: inherit; line-height: 1.6; }
-    .form-select option { background: #1a1f2e; }
+    /* Agent response bubble extras */
+    .triage-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+    .triage-pill{font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;letter-spacing:.3px}
+    .pill-p0{background:#5c0000;border:1px solid #f85149;color:#ff7b72}
+    .pill-p1{background:#3d2000;border:1px solid #e3b341;color:#e3b341}
+    .pill-p2{background:#0a2a0a;border:1px solid #3fb950;color:#3fb950}
+    .pill-p3{background:#1a1f2e;border:1px solid #58a6ff;color:#79c0ff}
+    .pill-dept{background:#1a1a2e;border:1px solid #8957e5;color:#d2a8ff}
+    .pill-sent{background:#1a1a1a;border:1px solid #8b949e;color:#adbac7}
+    .pill-esc{background:#3d0000;border:1px solid #f85149;color:#ff7b72}
 
-    .toggle-group {
-      display: flex;
-      gap: 8px;
-    }
-    .toggle-btn {
-      flex: 1;
-      padding: 8px;
-      border: 1px solid #2a3142;
-      border-radius: 8px;
-      background: #0f1117;
-      color: #94a3b8;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .toggle-btn.selected-true  { border-color: #22c55e; background: #0f2a1a; color: #22c55e; }
-    .toggle-btn.selected-false { border-color: #ef4444; background: #2a0f0f; color: #ef4444; }
+    .score-row{display:flex;align-items:center;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid #2a3d1a}
+    .score-label{font-size:11px;color:#8b949e}
+    .score-val{font-size:18px;font-weight:800;font-family:monospace}
+    .sv-great{color:#3fb950}.sv-ok{color:#e3b341}.sv-poor{color:#f85149}
+    .score-bar-bg{flex:1;height:5px;background:#2d333b;border-radius:3px;overflow:hidden}
+    .score-bar-fill{height:100%;border-radius:3px;transition:width .6s}
 
-    .submit-btn {
-      width: 100%;
-      padding: 12px;
-      background: linear-gradient(135deg, #2563eb, #1d4ed8);
-      border: none;
-      border-radius: 8px;
-      color: #fff;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s;
-      margin-top: 4px;
-      letter-spacing: 0.3px;
-    }
-    .submit-btn:hover { background: linear-gradient(135deg, #3b82f6, #2563eb); transform: translateY(-1px); }
-    .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    /* Typing indicator */
+    .typing-bubble{display:flex;gap:4px;align-items:center;padding:10px 14px}
+    .typing-bubble span{width:6px;height:6px;border-radius:50%;background:#58a6ff;animation:bounce .9s infinite}
+    .typing-bubble span:nth-child(2){animation-delay:.15s}
+    .typing-bubble span:nth-child(3){animation-delay:.3s}
+    @keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
 
-    /* ── Reward display ── */
-    .reward-box {
-      margin-top: 14px;
-      background: #0f1117;
-      border: 1px solid #2a3142;
-      border-radius: 8px;
-      padding: 14px;
-      display: none;
-    }
-    .reward-box.visible { display: block; }
-    .reward-score-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 10px;
-    }
-    .reward-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #64748b; }
-    .reward-score {
-      font-size: 28px;
-      font-weight: 800;
-      font-family: monospace;
-    }
-    .score-great { color: #22c55e; }
-    .score-ok    { color: #f59e0b; }
-    .score-poor  { color: #ef4444; }
-    .reward-bar-bg {
-      height: 6px;
-      background: #2a3142;
-      border-radius: 4px;
-      overflow: hidden;
-      margin-bottom: 10px;
-    }
-    .reward-bar-fill {
-      height: 100%;
-      border-radius: 4px;
-      transition: width 0.6s ease;
-    }
-    .reward-feedback {
-      font-size: 11px;
-      color: #64748b;
-      font-family: monospace;
-      word-break: break-all;
-      line-height: 1.5;
-    }
+    /* Input area */
+    .chat-input-area{border-top:1px solid #30363d;padding:14px 20px;background:#161b22;flex-shrink:0}
+    .input-hint{font-size:11px;color:#8b949e;margin-bottom:8px}
+    .input-row{display:flex;gap:8px}
+    .msg-input{flex:1;background:#0d1117;border:1px solid #30363d;border-radius:8px;color:#e2e8f0;font-size:13px;padding:9px 13px;outline:none;transition:border .2s;resize:none;height:42px;font-family:inherit}
+    .msg-input:focus{border-color:#58a6ff}
+    .send-btn{padding:0 20px;background:#238636;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:background .2s;flex-shrink:0}
+    .send-btn:hover{background:#2ea043}
+    .send-btn:disabled{opacity:.4;cursor:not-allowed}
 
-    /* ── Score tracker ── */
-    .score-tracker {
-      background: #1a1f2e;
-      border: 1px solid #2a3142;
-      border-radius: 12px;
-      padding: 16px 20px;
-      margin-top: 20px;
-      display: flex;
-      align-items: center;
-      gap: 20px;
-    }
-    .score-tracker .total-label { font-size: 12px; color: #64748b; }
-    .score-tracker .total-val {
-      font-size: 26px;
-      font-weight: 800;
-      font-family: monospace;
-      color: #60a5fa;
-    }
-    .step-scores { display: flex; gap: 8px; flex: 1; }
-    .step-score-chip {
-      flex: 1;
-      text-align: center;
-      background: #151a27;
-      border: 1px solid #2a3142;
-      border-radius: 8px;
-      padding: 8px 4px;
-      font-size: 13px;
-      font-weight: 700;
-      font-family: monospace;
-      color: #4a5568;
-      transition: all 0.3s;
-    }
-    .step-score-chip.filled { color: #f1f5f9; }
+    /* ── RIGHT: API Inspector ── */
+    .api-panel{display:flex;flex-direction:column}
+    .api-log{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+    .api-log::-webkit-scrollbar{width:4px}
+    .api-log::-webkit-scrollbar-thumb{background:#30363d;border-radius:2px}
 
-    /* ── Placeholder / empty state ── */
-    .empty-state {
-      text-align: center;
-      padding: 60px 20px;
-      color: #4a5568;
-    }
-    .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
-    .empty-state h3 { font-size: 18px; color: #64748b; margin-bottom: 8px; }
-    .empty-state p  { font-size: 14px; }
+    .empty-api{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#8b949e;text-align:center;gap:6px}
+    .empty-api .e-icon{font-size:32px;opacity:.3}
+    .empty-api p{font-size:12px;max-width:200px;line-height:1.6}
 
-    /* ── Episode complete ── */
-    .episode-complete {
-      text-align: center;
-      padding: 40px 20px;
-      display: none;
-    }
-    .episode-complete.visible { display: block; }
-    .episode-complete .big-score {
-      font-size: 64px;
-      font-weight: 900;
-      font-family: monospace;
-      margin: 12px 0;
-    }
-    .episode-complete h2 { font-size: 20px; color: #94a3b8; }
-    .episode-complete p  { font-size: 14px; color: #64748b; margin-top: 8px; }
-    .play-again-btn {
-      margin-top: 20px;
-      padding: 10px 28px;
-      background: #1e3a5f;
-      border: 1px solid #2d6a9f;
-      border-radius: 8px;
-      color: #60a5fa;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .play-again-btn:hover { background: #2d4a6e; }
+    .api-call{background:#161b22;border:1px solid #30363d;border-radius:8px;overflow:hidden;animation:slideIn .25s ease}
+    @keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .api-call-header{padding:8px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #30363d;cursor:pointer;user-select:none}
+    .api-call-header:hover{background:#1c2128}
+    .method-badge{font-size:10px;font-weight:800;padding:2px 7px;border-radius:5px;letter-spacing:.5px}
+    .mb-post{background:#238636;color:#fff}
+    .mb-get{background:#1f6feb;color:#fff}
+    .api-path{font-size:12px;font-family:monospace;color:#79c0ff;flex:1}
+    .api-status{font-size:11px;font-weight:700;color:#3fb950;margin-left:auto}
+    .api-time{font-size:10px;color:#8b949e}
+    .api-call-body{padding:10px 12px;font-size:11px;font-family:monospace;color:#adbac7;line-height:1.7;display:none}
+    .api-call-body.open{display:block}
+    .json-key{color:#79c0ff}
+    .json-str{color:#a5d6ff}
+    .json-num{color:#e3b341}
+    .json-bool{color:#f85149}
 
-    /* ── Spinner ── */
-    .spinner {
-      display: inline-block;
-      width: 16px; height: 16px;
-      border: 2px solid rgba(255,255,255,0.3);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin 0.6s linear infinite;
-      vertical-align: middle;
-      margin-right: 6px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    /* Triage summary card */
+    .triage-card{background:#161b22;border:1px solid #30363d;border-radius:8px;overflow:hidden}
+    .tc-header{padding:8px 12px;border-bottom:1px solid #30363d;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#8b949e;display:flex;align-items:center;gap:6px}
+    .tc-body{padding:12px}
+    .tc-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #21262d}
+    .tc-row:last-child{border-bottom:none}
+    .tc-field{font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:.5px}
+    .tc-val{font-size:12px;font-weight:600;font-family:monospace}
 
-    @media (max-width: 768px) {
-      .tasks-grid { grid-template-columns: 1fr; }
-      .play-area  { grid-template-columns: 1fr; }
-    }
+    /* Score summary */
+    .score-card{background:#0a2a0a;border:1px solid #238636;border-radius:8px;padding:12px;text-align:center}
+    .sc-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#3fb950;margin-bottom:4px}
+    .sc-big{font-size:36px;font-weight:900;font-family:monospace}
+    .sc-sub{font-size:11px;color:#8b949e;margin-top:4px}
+
+    /* Spinner */
+    .spin{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .5s linear infinite;vertical-align:middle}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    @media(max-width:768px){.main{grid-template-columns:1fr}.api-panel{display:none}}
   </style>
 </head>
 <body>
 
+<!-- Header -->
 <header>
   <div class="logo">📧</div>
   <div>
-    <h1>Customer Support Ticket Triage</h1>
-    <p>OpenEnv — Real-world AI agent evaluation environment</p>
+    <div class="h-title">Customer Support Triage — OpenEnv</div>
+    <div class="h-sub">AI agent evaluation environment · Live demo</div>
   </div>
-  <div class="badge">OpenEnv v1.0</div>
+  <div class="h-badge">OpenEnv v1.0</div>
 </header>
 
-<div class="container">
+<!-- Scenario selector -->
+<div class="scenario-bar">
+  <span class="sb-label">Scenarios →</span>
+  <!-- task1 -->
+  <div class="sc-chip" onclick="loadScenario('TK-1001')" id="chip-TK-1001">
+    <span class="diff diff-easy">E</span>Production down
+  </div>
+  <div class="sc-chip" onclick="loadScenario('TK-1002')" id="chip-TK-1002">
+    <span class="diff diff-easy">E</span>Password reset
+  </div>
+  <div class="sc-chip" onclick="loadScenario('TK-1003')" id="chip-TK-1003">
+    <span class="diff diff-easy">E</span>Invoice overcharge
+  </div>
+  <!-- task2 -->
+  <div class="sc-chip" onclick="loadScenario('TK-2001')" id="chip-TK-2001">
+    <span class="diff diff-medium">M</span>Angry enterprise
+  </div>
+  <div class="sc-chip" onclick="loadScenario('TK-2003')" id="chip-TK-2003">
+    <span class="diff diff-medium">M</span>Webhook broken
+  </div>
+  <div class="sc-chip" onclick="loadScenario('TK-2005')" id="chip-TK-2005">
+    <span class="diff diff-medium">M</span>Suspicious logins
+  </div>
+  <!-- task3 -->
+  <div class="sc-chip" onclick="loadScenario('TK-3004')" id="chip-TK-3004">
+    <span class="diff diff-hard">H</span>SQL injection report
+  </div>
+  <div class="sc-chip" onclick="loadScenario('TK-3005')" id="chip-TK-3005">
+    <span class="diff diff-hard">H</span>SLA breach
+  </div>
+  <div class="sc-chip" onclick="loadScenario('TK-3001')" id="chip-TK-3001">
+    <span class="diff diff-hard">H</span>Rate limit 429
+  </div>
+</div>
 
-  <!-- Task selector -->
-  <div class="section-title">Select a Task</div>
-  <div class="tasks-grid">
-    <div class="task-card task-easy" onclick="selectTask('task1_triage')">
-      <div class="diff-badge">EASY</div>
-      <h3>Quick Triage</h3>
-      <p>Classify ticket priority and route to the correct department.</p>
-      <div class="fields">
-        <span class="field-tag">priority</span>
-        <span class="field-tag">department</span>
+<!-- Main -->
+<div class="main">
+
+  <!-- LEFT: Customer chat -->
+  <div class="chat-panel">
+    <div class="panel-header">
+      <div class="panel-icon">💬</div>
+      <div>
+        <div class="panel-title">Customer Support Portal</div>
+        <div class="panel-sub">Inbound ticket · Agent processing</div>
+      </div>
+      <div class="status-dot"></div>
+    </div>
+
+    <div class="chat-messages" id="chatMessages">
+      <div class="empty-chat" id="emptyChat">
+        <div class="e-icon">🎫</div>
+        <p>Select a scenario above to simulate a customer submitting a support ticket.</p>
       </div>
     </div>
-    <div class="task-card task-medium" onclick="selectTask('task2_routing')">
-      <div class="diff-badge">MEDIUM</div>
-      <h3>Smart Routing</h3>
-      <p>Add sentiment detection and escalation decision to triage.</p>
-      <div class="fields">
-        <span class="field-tag">priority</span>
-        <span class="field-tag">department</span>
-        <span class="field-tag">sentiment</span>
-        <span class="field-tag">escalate</span>
-      </div>
-    </div>
-    <div class="task-card task-hard" onclick="selectTask('task3_resolution')">
-      <div class="diff-badge">HARD</div>
-      <h3>Full Resolution</h3>
-      <p>Complete triage plus drafting a professional email response.</p>
-      <div class="fields">
-        <span class="field-tag">priority</span>
-        <span class="field-tag">department</span>
-        <span class="field-tag">response_draft</span>
+
+    <div class="chat-input-area">
+      <div class="input-hint">Select a scenario above, or type a custom message and send:</div>
+      <div class="input-row">
+        <textarea class="msg-input" id="msgInput" placeholder="Type a support message…" rows="1"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendCustom()}"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendCustom()">Send</button>
       </div>
     </div>
   </div>
 
-  <!-- Play area -->
-  <div class="play-area">
-
-    <!-- Ticket display -->
-    <div class="ticket-card">
-      <div class="ticket-header">
-        <span class="ticket-id" id="ticketId">—</span>
-        <div class="step-progress" id="stepProgress">
-          <div class="step-dot" id="dot0"></div>
-          <div class="step-dot" id="dot1"></div>
-          <div class="step-dot" id="dot2"></div>
-          <div class="step-dot" id="dot3"></div>
-          <div class="step-dot" id="dot4"></div>
-        </div>
-      </div>
-      <div class="ticket-body" id="ticketBody">
-        <div class="empty-state">
-          <div class="icon">🎯</div>
-          <h3>Select a task to begin</h3>
-          <p>Choose Easy, Medium, or Hard above to start triaging tickets.</p>
-        </div>
-        <div class="episode-complete" id="episodeComplete">
-          <h2>Episode Complete!</h2>
-          <div class="big-score" id="finalScore">—</div>
-          <p id="finalMsg">Mean score across 5 tickets</p>
-          <button class="play-again-btn" id="playAgainBtn" onclick="playAgain()">Play Again</button>
-        </div>
+  <!-- RIGHT: API Inspector -->
+  <div class="api-panel">
+    <div class="panel-header">
+      <div class="panel-icon">⚡</div>
+      <div>
+        <div class="panel-title">OpenEnv API Activity</div>
+        <div class="panel-sub">Live API calls · Triage decisions · Scores</div>
       </div>
     </div>
 
-    <!-- Action panel -->
-    <div class="action-panel">
-      <div class="panel-header">Your Action</div>
-      <div class="panel-body">
-
-        <!-- Priority -->
-        <div class="form-group" id="fieldPriority">
-          <label class="form-label">Priority</label>
-          <select class="form-select" id="priority">
-            <option value="">— select —</option>
-            <option value="P0">P0 — Critical (system down)</option>
-            <option value="P1">P1 — High (major impact)</option>
-            <option value="P2">P2 — Medium (degraded)</option>
-            <option value="P3">P3 — Low (question / feature)</option>
-          </select>
-        </div>
-
-        <!-- Department -->
-        <div class="form-group" id="fieldDepartment">
-          <label class="form-label">Department</label>
-          <select class="form-select" id="department">
-            <option value="">— select —</option>
-            <option value="engineering">Engineering</option>
-            <option value="billing">Billing</option>
-            <option value="support">Support</option>
-            <option value="security">Security</option>
-            <option value="product">Product</option>
-            <option value="sales">Sales</option>
-          </select>
-        </div>
-
-        <!-- Sentiment (task 2) -->
-        <div class="form-group" id="fieldSentiment" style="display:none">
-          <label class="form-label">Customer Sentiment</label>
-          <select class="form-select" id="sentiment">
-            <option value="">— select —</option>
-            <option value="positive">Positive</option>
-            <option value="neutral">Neutral</option>
-            <option value="negative">Negative</option>
-            <option value="angry">Angry</option>
-          </select>
-        </div>
-
-        <!-- Escalate (task 2) -->
-        <div class="form-group" id="fieldEscalate" style="display:none">
-          <label class="form-label">Escalate to Manager?</label>
-          <div class="toggle-group">
-            <button class="toggle-btn" id="btnTrue"  onclick="setEscalate(true)">Yes — Escalate</button>
-            <button class="toggle-btn" id="btnFalse" onclick="setEscalate(false)">No — Handle normally</button>
-          </div>
-        </div>
-
-        <!-- Response draft (task 3) -->
-        <div class="form-group" id="fieldResponse" style="display:none">
-          <label class="form-label">Response Draft (80–300 words)</label>
-          <textarea class="form-textarea" id="response_draft" placeholder="Dear customer,&#10;&#10;Thank you for reaching out..."></textarea>
-          <div style="font-size:11px;color:#4a5568;margin-top:4px;" id="wordCount">0 words</div>
-        </div>
-
-        <button class="submit-btn" id="submitBtn" onclick="submitAction()" disabled>
-          Submit Action
-        </button>
-
-        <div class="reward-box" id="rewardBox">
-          <div class="reward-score-row">
-            <span class="reward-label">Step Score</span>
-            <span class="reward-score" id="rewardScore">—</span>
-          </div>
-          <div class="reward-bar-bg">
-            <div class="reward-bar-fill" id="rewardBar" style="width:0%"></div>
-          </div>
-          <div class="reward-feedback" id="rewardFeedback"></div>
-        </div>
+    <div class="api-log" id="apiLog">
+      <div class="empty-api" id="emptyApi">
+        <div class="e-icon">🔌</div>
+        <p>API calls will appear here as the agent processes each ticket.</p>
       </div>
     </div>
   </div>
-
-  <!-- Score tracker -->
-  <div class="score-tracker">
-    <div>
-      <div class="total-label">Mean Score</div>
-      <div class="total-val" id="meanScore">—</div>
-    </div>
-    <div class="step-scores" id="stepScores">
-      <div class="step-score-chip" id="sc0">—</div>
-      <div class="step-score-chip" id="sc1">—</div>
-      <div class="step-score-chip" id="sc2">—</div>
-      <div class="step-score-chip" id="sc3">—</div>
-      <div class="step-score-chip" id="sc4">—</div>
-    </div>
-  </div>
-
 </div>
 
 <script>
-  // ── State ───────────────────────────────────────────────────────────────────
-  let currentTask = null;
-  let currentStep = 0;
-  let stepScores  = [];
-  let escalateVal = null;
-  let episodeDone = false;
+// ── Scenario data (mirrors backend tickets) ───────────────────────────────
+const SCENARIOS = {
+  "TK-1001": {subject:"URGENT: Production API completely down — all requests 503",body:"Our entire platform has been down for 25 minutes. Every API call returns 503. We have 50,000 active users affected and are losing ~$8,000/minute in revenue. Our CTO is on a call with our investors right now. Please escalate immediately.",sender:"cto@enterprise-client.com",tier:"enterprise",product:"API Platform",task:"task1_triage"},
+  "TK-1002": {subject:"How do I reset my password?",body:"Hi there, I forgot my password and can't log in. I tried the 'Forgot password' link twice but never received an email. Could you help me regain access to my account? Thanks!",sender:"jane.doe@gmail.com",tier:"free",product:"Web App",task:"task1_triage"},
+  "TK-1003": {subject:"Invoice overcharge — billed $1,500 instead of $1,000",body:"I just received my monthly invoice and I've been charged $1,500 instead of the contracted $1,000. I have been on the Growth plan for 6 months at the same price. Please investigate and issue a credit note or refund the $500 difference as soon as possible.",sender:"finance@medium-business.com",tier:"basic",product:"Billing",task:"task1_triage"},
+  "TK-2001": {subject:"Third billing error this month — I am done with this company",body:"I cannot believe this is happening AGAIN. For the third month in a row you have overcharged my credit card. Each time I have to spend hours on support to get it fixed. My CFO is furious. If this is not resolved TODAY with a full refund AND a written explanation, we are cancelling our enterprise contract worth $120k/yr and going public on Twitter about your billing practices. This is completely unacceptable.",sender:"vp-finance@angry-enterprise.com",tier:"enterprise",product:"Billing",task:"task2_routing"},
+  "TK-2003": {subject:"Webhook integration broken after last night's deployment",body:"Since your deployment at ~02:00 UTC, our webhook endpoints are no longer receiving events. Our monitoring shows zero callbacks in the last 6 hours. We process 4,000 orders/hour through this webhook — our fulfilment pipeline is completely stalled. We have confirmed our endpoint is healthy. This is a severity-1 issue on our end. Please investigate urgently.",sender:"platform-eng@ecommerce-giant.com",tier:"enterprise",product:"Webhooks",task:"task2_routing"},
+  "TK-2005": {subject:"Suspicious login attempts — MFA codes being requested without my action",body:"Over the past two hours I have received 11 MFA authentication requests on my phone that I did not initiate. Someone appears to be attempting to access my account with my correct password. I have not shared my credentials with anyone. Please immediately lock my account and investigate. I'm worried my data may already be compromised.",sender:"worried-user@company.com",tier:"basic",product:"Authentication",task:"task2_routing"},
+  "TK-3001": {subject:"API rate limit errors — 429 on all endpoints",body:"We keep hitting 429 Too Many Requests errors across all your API endpoints. Our current plan says 1,000 req/min but we're well below that according to our own metrics. The errors started 3 hours ago. We've tried backing off and retrying with exponential backoff but still seeing the issue. Error header: X-RateLimit-Remaining: 0, X-RateLimit-Reset: 1705320000",sender:"backend@tech-company.com",tier:"basic",product:"API Platform",task:"task3_resolution"},
+  "TK-3004": {subject:"SQL injection vulnerability found in your search endpoint",body:"During a routine security audit of your platform, our penetration tester discovered a SQL injection vulnerability in the /api/v2/search endpoint. Using the payload: ' OR '1'='1 we were able to retrieve records from other tenants. We have proof-of-concept code and screenshots. We're disclosing this responsibly and expect it to be patched within 48 hours as per your stated security policy. Please acknowledge receipt and provide a timeline.",sender:"security-researcher@audit-firm.com",tier:"enterprise",product:"API Platform",task:"task3_resolution"},
+  "TK-3005": {subject:"SLA breach — 6-hour outage not covered by your 99.9% uptime guarantee",body:"Your platform was completely unavailable from 14:00–20:00 UTC on January 10th (6 hours). Our enterprise contract guarantees 99.9% monthly uptime (~43 min allowed downtime). This single incident consumed our entire monthly allowance and exceeded it by 5+ hours. Per section 8.2 of our contract, we are entitled to a 15% service credit. Please confirm the credit will appear on our next invoice and provide a post-mortem report.",sender:"director-it@large-enterprise.com",tier:"enterprise",product:"API Platform",task:"task3_resolution"},
+};
 
-  // ── Task selection ──────────────────────────────────────────────────────────
-  async function selectTask(taskId) {
-    document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active'));
-    const idx = ['task1_triage','task2_routing','task3_resolution'].indexOf(taskId);
-    document.querySelectorAll('.task-card')[idx].classList.add('active');
+const TASK_LABELS = {task1_triage:"Easy · Quick Triage",task2_routing:"Medium · Smart Routing",task3_resolution:"Hard · Full Resolution"};
+let processing = false;
+let t0;
 
-    currentTask = taskId;
-    currentStep = 0;
-    stepScores  = [];
-    escalateVal = null;
-    episodeDone = false;
+// ── Load a pre-built scenario ─────────────────────────────────────────────
+async function loadScenario(ticketId) {
+  if (processing) return;
+  document.querySelectorAll('.sc-chip').forEach(c=>c.classList.remove('active'));
+  document.getElementById('chip-'+ticketId)?.classList.add('active');
 
-    resetScoreUI();
-    document.getElementById('episodeComplete').classList.remove('visible');
-    document.getElementById('rewardBox').classList.remove('visible');
+  const sc = SCENARIOS[ticketId];
+  if (!sc) return;
 
-    showFields(taskId);
-    setSubmitBtn(false);
+  clearChat();
+  clearApiLog();
 
-    const btn = document.getElementById('submitBtn');
-    btn.innerHTML = '<span class="spinner"></span> Starting…';
+  // Show customer message
+  addCustomerBubble(sc.subject, sc.body, sc.sender, sc.tier, sc.product);
+  await sleep(400);
+  addTypingIndicator();
 
-    try {
-      const res = await fetch('/reset', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({task_id: taskId})
-      });
-      const data = await res.json();
-      renderTicket(data.observation);
-      updateDots(0);
-      btn.innerHTML = 'Submit Action';
-      setSubmitBtn(true);
-    } catch(e) {
-      btn.innerHTML = 'Submit Action';
-      alert('Error connecting to environment: ' + e.message);
-    }
-  }
+  await processTicket(ticketId, sc.task);
+}
 
-  // ── Render ticket ───────────────────────────────────────────────────────────
-  function renderTicket(obs) {
-    if (!obs) return;
-    const t = obs.ticket;
+// ── Custom message (use TK-3001 as base for demo) ────────────────────────
+async function sendCustom() {
+  const input = document.getElementById('msgInput');
+  const msg = input.value.trim();
+  if (!msg || processing) return;
+  input.value = '';
 
-    document.getElementById('ticketId').textContent = t.ticket_id;
+  document.querySelectorAll('.sc-chip').forEach(c=>c.classList.remove('active'));
+  clearChat();
+  clearApiLog();
 
-    const tierClass = `tier-${t.sender_tier}`;
-    const ts = new Date(t.timestamp).toLocaleString();
+  addCustomerBubble("Support Request", msg, "customer@example.com", "basic", "General");
+  await sleep(400);
+  addTypingIndicator();
 
-    // Replace ticket body content (preserve episode-complete div)
-    const body = document.getElementById('ticketBody');
-    const complete = document.getElementById('episodeComplete');
+  // Use TK-3001 as the closest match for demo
+  await processTicket('TK-3001', 'task3_resolution');
+}
 
-    // Remove old ticket content (everything except episodeComplete)
-    [...body.children].forEach(el => {
-      if (el.id !== 'episodeComplete') el.remove();
+// ── Core: call /demo/analyze and render everything ─────────────────────────
+async function processTicket(ticketId, taskId) {
+  processing = true;
+  document.getElementById('sendBtn').disabled = true;
+  t0 = Date.now();
+
+  try {
+    // Show API call 1: POST /reset (pre-flight)
+    await sleep(300);
+    addApiCallPending('POST', '/reset', {task_id: taskId});
+    await sleep(500);
+    resolveApiCall(0, 200, {task_id: taskId, episode: 1, status: "ok"});
+
+    // Show API call 2: POST /demo/analyze (fetching)
+    await sleep(200);
+    addApiCallPending('POST', '/step', {ticket_id: ticketId, task_id: taskId});
+
+    const res = await fetch('/demo/analyze', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ticket_id: ticketId, task_id: taskId})
     });
+    const data = await res.json();
 
-    const wrap = document.createElement('div');
-    wrap.innerHTML = `
-      <div class="ticket-subject">${escHtml(t.subject)}</div>
-      <div class="ticket-meta">
-        <span class="meta-chip">${escHtml(t.sender)}</span>
-        <span class="meta-chip ${tierClass}">${t.sender_tier}</span>
-        <span class="meta-chip">${escHtml(t.product)}</span>
-        <span class="meta-chip">${ts}</span>
+    const elapsed = Date.now() - t0;
+    resolveApiCall(1, 200, {
+      priority: data.triage.priority,
+      department: data.triage.department,
+      sentiment: data.triage.sentiment,
+      escalate: data.triage.escalate,
+      reward: data.score,
+    }, elapsed + 'ms');
+
+    // Remove typing indicator and show agent response
+    removeTypingIndicator();
+    await sleep(150);
+    addAgentBubble(data);
+
+    // Show triage summary card in right panel
+    addTriageCard(data);
+
+  } catch(e) {
+    removeTypingIndicator();
+    addErrorBubble('Connection error: ' + e.message);
+    resolveApiCallError(1);
+  }
+
+  processing = false;
+  document.getElementById('sendBtn').disabled = false;
+}
+
+// ── Chat UI helpers ───────────────────────────────────────────────────────
+function clearChat() {
+  const el = document.getElementById('chatMessages');
+  el.innerHTML = '';
+}
+
+function addCustomerBubble(subject, body, sender, tier, product) {
+  const el = document.getElementById('chatMessages');
+  const tierCls = tier === 'enterprise' ? 'ent' : tier === 'basic' ? 'basic' : '';
+  const div = document.createElement('div');
+  div.className = 'msg customer';
+  div.innerHTML = `
+    <div class="avatar">👤</div>
+    <div class="bubble">
+      <div class="b-subject">${esc(subject)}</div>
+      <div class="b-meta">
+        <span class="b-tag ${tierCls}">${esc(sender)}</span>
+        <span class="b-tag ${tierCls}">${tier}</span>
+        <span class="b-tag">${esc(product)}</span>
       </div>
-      <div class="ticket-message">${escHtml(t.body)}</div>
-    `;
-    body.insertBefore(wrap, complete);
+      <div class="b-body">${esc(body)}</div>
+    </div>`;
+  el.appendChild(div);
+  scrollChat();
+}
 
-    // Clear form
-    document.getElementById('priority').value = '';
-    document.getElementById('department').value = '';
-    if (document.getElementById('sentiment'))
-      document.getElementById('sentiment').value = '';
-    document.getElementById('response_draft').value = '';
-    document.getElementById('wordCount').textContent = '0 words';
-    escalateVal = null;
-    document.getElementById('btnTrue').className  = 'toggle-btn';
-    document.getElementById('btnFalse').className = 'toggle-btn';
-    document.getElementById('rewardBox').classList.remove('visible');
-  }
+function addTypingIndicator() {
+  const el = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'msg agent';
+  div.id = 'typing';
+  div.innerHTML = `
+    <div class="avatar">🤖</div>
+    <div class="bubble">
+      <div class="typing-bubble">
+        <span></span><span></span><span></span>
+      </div>
+    </div>`;
+  el.appendChild(div);
+  scrollChat();
+}
 
-  // ── Submit action ───────────────────────────────────────────────────────────
-  async function submitAction() {
-    if (episodeDone) return;
+function removeTypingIndicator() {
+  document.getElementById('typing')?.remove();
+}
 
-    const action = {};
-    action.priority   = document.getElementById('priority').value   || null;
-    action.department = document.getElementById('department').value || null;
+function addAgentBubble(data) {
+  const el = document.getElementById('chatMessages');
+  const t = data.triage;
+  const score = data.score;
 
-    if (currentTask === 'task2_routing') {
-      action.sentiment = document.getElementById('sentiment').value || null;
-      action.escalate  = escalateVal;
-    }
-    if (currentTask === 'task3_resolution') {
-      action.response_draft = document.getElementById('response_draft').value || null;
-    }
+  const pClass = {P0:'pill-p0',P1:'pill-p1',P2:'pill-p2',P3:'pill-p3'}[t.priority]||'pill-p3';
+  const scoreClass = score >= 0.75 ? 'sv-great' : score >= 0.4 ? 'sv-ok' : 'sv-poor';
+  const barColor   = score >= 0.75 ? '#3fb950' : score >= 0.4 ? '#e3b341' : '#f85149';
 
-    const btn = document.getElementById('submitBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> Grading…';
+  let pills = `<span class="triage-pill ${pClass}">${t.priority||'?'}</span>`;
+  if (t.department) pills += `<span class="triage-pill pill-dept">${t.department}</span>`;
+  if (t.sentiment)  pills += `<span class="triage-pill pill-sent">${t.sentiment}</span>`;
+  if (t.escalate)   pills += `<span class="triage-pill pill-esc">ESCALATE</span>`;
 
-    try {
-      const res = await fetch('/step', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify(action)
-      });
-      const data = await res.json();
+  const responseHtml = data.response_draft
+    ? `<div class="b-body" style="margin-top:8px;padding-top:8px;border-top:1px solid #2a3d1a">${esc(data.response_draft)}</div>`
+    : '';
 
-      showReward(data.reward, data.reward_breakdown, data.feedback);
-      stepScores.push(data.reward);
-      updateScoreUI();
+  const div = document.createElement('div');
+  div.className = 'msg agent';
+  div.innerHTML = `
+    <div class="avatar">🤖</div>
+    <div class="bubble">
+      <div class="triage-pills">${pills}</div>
+      ${responseHtml}
+      <div class="score-row">
+        <span class="score-label">Score</span>
+        <span class="score-val ${scoreClass}">${score.toFixed(2)}</span>
+        <div class="score-bar-bg">
+          <div class="score-bar-fill" style="width:${score*100}%;background:${barColor}"></div>
+        </div>
+      </div>
+    </div>`;
+  el.appendChild(div);
+  scrollChat();
+}
 
-      currentStep++;
-      updateDots(currentStep);
+function addErrorBubble(msg) {
+  const el = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'msg agent';
+  div.innerHTML = `<div class="avatar">⚠️</div><div class="bubble"><div class="b-body" style="color:#f85149">${esc(msg)}</div></div>`;
+  el.appendChild(div);
+  scrollChat();
+}
 
-      if (data.done) {
-        episodeDone = true;
-        setTimeout(() => showEpisodeComplete(), 1200);
-        btn.innerHTML = 'Episode Complete';
-      } else {
-        renderTicket(data.observation);
-        btn.innerHTML = 'Submit Action';
-        btn.disabled = false;
-      }
-    } catch(e) {
-      btn.innerHTML = 'Submit Action';
-      btn.disabled = false;
-      alert('Error: ' + e.message);
-    }
-  }
+function scrollChat() {
+  const el = document.getElementById('chatMessages');
+  el.scrollTop = el.scrollHeight;
+}
 
-  // ── Reward display ──────────────────────────────────────────────────────────
-  function showReward(score, breakdown, feedback) {
-    const box  = document.getElementById('rewardBox');
-    const sc   = document.getElementById('rewardScore');
-    const bar  = document.getElementById('rewardBar');
-    const fb   = document.getElementById('rewardFeedback');
+// ── API Log helpers ───────────────────────────────────────────────────────
+function clearApiLog() {
+  document.getElementById('apiLog').innerHTML = '';
+}
 
-    box.classList.add('visible');
-    sc.textContent = score.toFixed(2);
-    sc.className = 'reward-score ' + (score >= 0.75 ? 'score-great' : score >= 0.4 ? 'score-ok' : 'score-poor');
+let apiCallCount = 0;
+function addApiCallPending(method, path, reqBody) {
+  const id = 'api-' + apiCallCount++;
+  const el = document.getElementById('apiLog');
+  const div = document.createElement('div');
+  div.className = 'api-call';
+  div.id = id;
+  const mbClass = method === 'POST' ? 'mb-post' : 'mb-get';
+  div.innerHTML = `
+    <div class="api-call-header" onclick="toggleBody('${id}')">
+      <span class="method-badge ${mbClass}">${method}</span>
+      <span class="api-path">${path}</span>
+      <span class="api-status"><span class="spin"></span></span>
+      <span class="api-time"></span>
+    </div>
+    <div class="api-call-body" id="${id}-body">
+      <div>${jsonHtml(reqBody)}</div>
+    </div>`;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
 
-    bar.style.width = (score * 100) + '%';
-    bar.style.background = score >= 0.75 ? '#22c55e' : score >= 0.4 ? '#f59e0b' : '#ef4444';
+function resolveApiCall(idx, status, resBody, elapsed) {
+  const id = 'api-' + idx;
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.querySelector('.api-status').innerHTML = `<span style="color:#3fb950">● ${status}</span>`;
+  if (elapsed) el.querySelector('.api-time').textContent = elapsed;
+  const body = el.querySelector('.api-call-body');
+  body.innerHTML += `<div style="margin-top:6px;padding-top:6px;border-top:1px solid #21262d">${jsonHtml(resBody)}</div>`;
+}
 
-    fb.textContent = feedback;
-  }
+function resolveApiCallError(idx) {
+  const id = 'api-' + idx;
+  const el = document.getElementById(id);
+  if (el) el.querySelector('.api-status').innerHTML = '<span style="color:#f85149">● error</span>';
+}
 
-  // ── Episode complete ────────────────────────────────────────────────────────
-  function showEpisodeComplete() {
-    const mean = stepScores.reduce((a,b)=>a+b,0) / stepScores.length;
-    const complete = document.getElementById('episodeComplete');
-    const fs = document.getElementById('finalScore');
-    fs.textContent = mean.toFixed(2);
-    fs.className = 'big-score ' + (mean >= 0.75 ? 'score-great' : mean >= 0.4 ? 'score-ok' : 'score-poor');
-    complete.classList.add('visible');
-  }
+function addTriageCard(data) {
+  const el = document.getElementById('apiLog');
+  const t = data.triage;
+  const score = data.score;
+  const scoreClass = score >= 0.75 ? 'sv-great' : score >= 0.4 ? 'sv-ok' : 'sv-poor';
 
-  function playAgain() {
-    if (currentTask) selectTask(currentTask);
-  }
+  const rows = Object.entries({
+    Priority:   t.priority  || '—',
+    Department: t.department|| '—',
+    Sentiment:  t.sentiment || '—',
+    Escalate:   t.escalate != null ? String(t.escalate) : '—',
+  }).map(([k,v]) => `<div class="tc-row"><span class="tc-field">${k}</span><span class="tc-val">${esc(v)}</span></div>`).join('');
 
-  // ── Score tracker UI ────────────────────────────────────────────────────────
-  function updateScoreUI() {
-    const mean = stepScores.length
-      ? (stepScores.reduce((a,b)=>a+b,0)/stepScores.length).toFixed(2)
-      : '—';
-    document.getElementById('meanScore').textContent = mean;
+  const breakdownHtml = Object.entries(data.breakdown || {})
+    .map(([k,v]) => `<div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0;color:#8b949e"><span>${k}</span><span style="font-family:monospace;color:${v>0?'#3fb950':'#8b949e'}">${v.toFixed(3)}</span></div>`)
+    .join('');
 
-    for (let i = 0; i < 5; i++) {
-      const chip = document.getElementById('sc' + i);
-      if (i < stepScores.length) {
-        chip.textContent = stepScores[i].toFixed(2);
-        chip.classList.add('filled');
-        const s = stepScores[i];
-        chip.style.color = s >= 0.75 ? '#22c55e' : s >= 0.4 ? '#f59e0b' : '#ef4444';
-        chip.style.borderColor = s >= 0.75 ? '#22c55e55' : s >= 0.4 ? '#f59e0b55' : '#ef444455';
-      } else {
-        chip.textContent = '—';
-        chip.classList.remove('filled');
-        chip.style.color = '';
-        chip.style.borderColor = '';
-      }
-    }
-  }
+  const div = document.createElement('div');
+  div.style.animation = 'slideIn .3s ease';
+  div.innerHTML = `
+    <div class="triage-card">
+      <div class="tc-header">🎯 Triage Decision</div>
+      <div class="tc-body">${rows}</div>
+    </div>
+    <div class="triage-card" style="margin-top:8px">
+      <div class="tc-header">📊 Score Breakdown</div>
+      <div class="tc-body" style="max-height:160px;overflow-y:auto">${breakdownHtml}</div>
+    </div>
+    <div class="score-card" style="margin-top:8px">
+      <div class="sc-label">Episode Step Score</div>
+      <div class="sc-big ${scoreClass}">${score.toFixed(2)}</div>
+      <div class="sc-sub">${data.feedback.slice(0,80)}…</div>
+    </div>`;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
 
-  function resetScoreUI() {
-    document.getElementById('meanScore').textContent = '—';
-    for (let i = 0; i < 5; i++) {
-      const chip = document.getElementById('sc' + i);
-      chip.textContent = '—';
-      chip.classList.remove('filled');
-      chip.style.color = '';
-      chip.style.borderColor = '';
-    }
-  }
+function toggleBody(id) {
+  const b = document.getElementById(id + '-body');
+  if (b) b.classList.toggle('open');
+}
 
-  // ── Step dots ───────────────────────────────────────────────────────────────
-  function updateDots(activeIdx) {
-    for (let i = 0; i < 5; i++) {
-      const dot = document.getElementById('dot' + i);
-      dot.className = 'step-dot';
-      if (i < activeIdx)      dot.classList.add('done');
-      else if (i === activeIdx) dot.classList.add('active');
-    }
-  }
+// ── Utilities ──────────────────────────────────────────────────────────────
+function jsonHtml(obj) {
+  return JSON.stringify(obj, null, 2)
+    .replace(/("[\w_]+")\s*:/g, '<span class="json-key">$1</span>:')
+    .replace(/:\s*(".*?")/g, ': <span class="json-str">$1</span>')
+    .replace(/:\s*(\d+\.?\d*)/g, ': <span class="json-num">$1</span>')
+    .replace(/:\s*(true|false)/g, ': <span class="json-bool">$1</span>');
+}
 
-  // ── Show/hide fields by task ─────────────────────────────────────────────────
-  function showFields(taskId) {
-    document.getElementById('fieldSentiment').style.display = taskId === 'task2_routing' ? '' : 'none';
-    document.getElementById('fieldEscalate').style.display  = taskId === 'task2_routing' ? '' : 'none';
-    document.getElementById('fieldResponse').style.display  = taskId === 'task3_resolution' ? '' : 'none';
-  }
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
 
-  // ── Escalate toggle ──────────────────────────────────────────────────────────
-  function setEscalate(val) {
-    escalateVal = val;
-    document.getElementById('btnTrue').className  = 'toggle-btn' + (val === true  ? ' selected-true'  : '');
-    document.getElementById('btnFalse').className = 'toggle-btn' + (val === false ? ' selected-false' : '');
-  }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-  function setSubmitBtn(enabled) {
-    document.getElementById('submitBtn').disabled = !enabled;
-  }
-
-  // ── Word count ───────────────────────────────────────────────────────────────
-  document.getElementById('response_draft').addEventListener('input', function() {
-    const words = this.value.trim() ? this.value.trim().split(/\s+/).length : 0;
-    const el = document.getElementById('wordCount');
-    el.textContent = words + ' words';
-    el.style.color = words >= 80 && words <= 300 ? '#22c55e' : words > 300 ? '#ef4444' : '#64748b';
-  });
-
-  // ── Helpers ──────────────────────────────────────────────────────────────────
-  function escHtml(s) {
-    return String(s)
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
+// Auto-load first scenario on page load
+window.addEventListener('load', () => setTimeout(() => loadScenario('TK-1001'), 600));
 </script>
 </body>
 </html>
