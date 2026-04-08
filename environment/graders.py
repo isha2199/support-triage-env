@@ -17,19 +17,24 @@ def _clip(score: float) -> float:
     """Clamp score to strictly open interval (0, 1) as required by the evaluator."""
     return max(_SCORE_MIN, min(_SCORE_MAX, score))
 
-
 def _clip_breakdown(breakdown: Dict[str, float]) -> Dict[str, float]:
-    """Ensure breakdown components and their sum are strictly in (0, 1).
-    1. Floor each component at _SCORE_MIN (eliminates exact 0.0).
-    2. If the sum >= _SCORE_MAX, scale all components proportionally
-       so the sum equals _SCORE_MAX (eliminates exact 1.0 on the sum).
     """
-    floored = {k: max(_SCORE_MIN, v) for k, v in breakdown.items()}
+    Ensure every breakdown value AND total stay strictly in (0,1).
+    """
+    floored = {k: max(_SCORE_MIN, float(v)) for k, v in breakdown.items()}
     total = sum(floored.values())
+
     if total >= _SCORE_MAX:
-        factor = _SCORE_MAX / total
-        return {k: round(v * factor, 6) for k, v in floored.items()}
-    return floored
+        factor = (_SCORE_MAX - 1e-6) / total
+        scaled = {k: v * factor for k, v in floored.items()}
+    else:
+        scaled = floored
+
+    # final strict clipping per component
+    return {
+        k: max(_SCORE_MIN, min(_SCORE_MAX - 1e-6, round(v, 6)))
+        for k, v in scaled.items()
+    }
 
 # Priority adjacency — being one level off earns partial credit
 _PRIORITY_RANK: Dict[str, int] = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
