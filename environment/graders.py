@@ -17,6 +17,13 @@ def _clip(score: float) -> float:
     """Clamp score to strictly open interval (0, 1) as required by the evaluator."""
     return max(_SCORE_MIN, min(_SCORE_MAX, score))
 
+
+def _clip_breakdown(breakdown: Dict[str, float]) -> Dict[str, float]:
+    """Ensure no breakdown component is exactly 0.0 or 1.0.
+    Components are partial credit weights, not full [0,1] scores, so their
+    max values are well below 1.0 — only the zero floor needs guarding."""
+    return {k: max(_SCORE_MIN, v) for k, v in breakdown.items()}
+
 # Priority adjacency — being one level off earns partial credit
 _PRIORITY_RANK: Dict[str, int] = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}
 
@@ -48,7 +55,7 @@ def grade_task1(action: Action, expected: Dict[str, Any]) -> Tuple[float, Dict[s
     score = _clip(sum(breakdown.values()))
     parts = []
     parts.append(
-        f"priority={'✓' if breakdown['priority'] == 0.50 else ('~' if breakdown['priority'] > 0 else '✗')} "
+        f"priority={'✓' if breakdown['priority'] == 0.50 else ('~' if breakdown['priority'] > 0.001 else '✗')} "
         f"(got={action.priority}, want={expected['priority']})"
     )
     parts.append(
@@ -56,7 +63,7 @@ def grade_task1(action: Action, expected: Dict[str, Any]) -> Tuple[float, Dict[s
         f"(got={action.department}, want={expected['department']})"
     )
     feedback = " | ".join(parts)
-    return round(score, 6), breakdown, feedback
+    return round(score, 6), _clip_breakdown(breakdown), feedback
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -82,13 +89,13 @@ def grade_task2(action: Action, expected: Dict[str, Any]) -> Tuple[float, Dict[s
 
     score = _clip(sum(breakdown.values()))
     parts = [
-        f"priority={'✓' if breakdown['priority'] == 0.30 else ('~' if breakdown['priority'] > 0 else '✗')}({action.priority}/{expected['priority']})",
+        f"priority={'✓' if breakdown['priority'] == 0.30 else ('~' if breakdown['priority'] > 0.001 else '✗')}({action.priority}/{expected['priority']})",
         f"dept={'✓' if breakdown['department'] == 0.30 else '✗'}({action.department}/{expected['department']})",
         f"sentiment={'✓' if breakdown['sentiment'] == 0.20 else '✗'}({action.sentiment}/{expected['sentiment']})",
         f"escalate={'✓' if breakdown['escalate'] == 0.20 else '✗'}({got_escalate}/{exp_escalate})",
     ]
     feedback = " | ".join(parts)
-    return round(score, 6), breakdown, feedback
+    return round(score, 6), _clip_breakdown(breakdown), feedback
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -186,18 +193,18 @@ def grade_task3(action: Action, expected: Dict[str, Any]) -> Tuple[float, Dict[s
 
     resp_score = sum(v for k, v in breakdown.items() if k.startswith("resp_"))
     parts = [
-        f"priority={'✓' if breakdown['priority'] == 0.10 else '~' if breakdown['priority'] > 0 else '✗'}",
+        f"priority={'✓' if breakdown['priority'] == 0.10 else '~' if breakdown['priority'] > 0.001 else '✗'}",
         f"dept={'✓' if breakdown['department'] == 0.10 else '✗'}",
         f"response={resp_score:.2f}/0.80 "
-        f"[greet={'✓' if breakdown['resp_greeting'] else '✗'} "
-        f"ack={'✓' if breakdown['resp_acknowledgment'] else '✗'} "
+        f"[greet={'✓' if breakdown['resp_greeting'] > 0.001 else '✗'} "
+        f"ack={'✓' if breakdown['resp_acknowledgment'] > 0.001 else '✗'} "
         f"sol={breakdown['resp_solution']:.2f}/0.30 "
-        f"steps={'✓' if breakdown['resp_next_steps'] else '✗'} "
-        f"close={'✓' if breakdown['resp_closing'] else '✗'} "
-        f"len={words}w={'✓' if breakdown['resp_length'] == 0.12 else '~' if breakdown['resp_length'] > 0 else '✗'}]",
+        f"steps={'✓' if breakdown['resp_next_steps'] > 0.001 else '✗'} "
+        f"close={'✓' if breakdown['resp_closing'] > 0.001 else '✗'} "
+        f"len={words}w={'✓' if breakdown['resp_length'] == 0.12 else '~' if breakdown['resp_length'] > 0.001 else '✗'}]",
     ]
     feedback = " | ".join(parts)
-    return round(score, 6), breakdown, feedback
+    return round(score, 6), _clip_breakdown(breakdown), feedback
 
 
 # ─────────────────────────────────────────────────────────────────────────────

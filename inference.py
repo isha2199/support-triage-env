@@ -198,7 +198,7 @@ def run_episode(env: SupportTriageEnv, task_id: str, episode: int) -> float:
             obs = result.observation
         step_idx += 1
 
-    mean_score = total_reward / step_idx if step_idx > 0 else 0.0
+    mean_score = total_reward / step_idx if step_idx > 0 else 0.001
     log_end(task_id, episode, mean_score, step_idx)
     return mean_score
 
