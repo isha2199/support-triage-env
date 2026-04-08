@@ -29,10 +29,10 @@ tasks:
       Classify the ticket priority (P0–P3) and route it to the correct
       department. Two-field action; partial credit for adjacent priority.
     max_steps: 5
-    expected_score_range: [0.60, 0.999]
+    expected_score_range: [0.60, 0.99]
     reward_weights:
-      priority: 0.50
-      department: 0.50
+      priority: 0.49
+      department: 0.49
 
   - id: task2_routing
     name: "Smart Routing"
@@ -44,10 +44,10 @@ tasks:
     max_steps: 5
     expected_score_range: [0.40, 0.80]
     reward_weights:
-      priority: 0.30
-      department: 0.30
-      sentiment: 0.20
-      escalate: 0.20
+      priority: 0.29
+      department: 0.29
+      sentiment: 0.19
+      escalate: 0.19
 
   - id: task3_resolution
     name: "Full Resolution"
@@ -60,14 +60,14 @@ tasks:
     max_steps: 5
     expected_score_range: [0.25, 0.65]
     reward_weights:
-      priority: 0.10
-      department: 0.10
+      priority: 0.09
+      department: 0.09
       response_greeting: 0.06
-      response_acknowledgment: 0.10
-      response_solution: 0.30
-      response_next_steps: 0.14
-      response_closing: 0.08
-      response_length: 0.12
+      response_acknowledgment: 0.09
+      response_solution: 0.29
+      response_next_steps: 0.13
+      response_closing: 0.07
+      response_length: 0.11
 
 # ── Observation space ─────────────────────────────────────────────────────────
 observation_space:
@@ -117,7 +117,7 @@ action_space:
 
 # ── Reward ────────────────────────────────────────────────────────────────────
 reward:
-  range: [0.001, 0.999]
+  range: [0.01, 0.99]
   exclusive_bounds: true
   frequency: per_step
   description: >

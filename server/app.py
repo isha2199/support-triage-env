@@ -323,7 +323,7 @@ def _build_demo_response(ticket: Dict[str, Any]) -> str:
 
 @app.get("/openenv.yaml", tags=["meta"], response_class=PlainTextResponse)
 def serve_openenv_yaml() -> str:
-    spec_path = Path(__file__).parent / "openenv.yaml"
+    spec_path = Path(__file__).parent.parent / "openenv.yaml"
     if spec_path.exists():
         return spec_path.read_text()
     raise HTTPException(status_code=404, detail="openenv.yaml not found")
