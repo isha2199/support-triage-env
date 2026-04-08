@@ -116,8 +116,11 @@ def list_tasks() -> Dict[str, Any]:
         task_id: {
             "description": TASK_DESCRIPTIONS[task_id],
             "action_schema": ACTION_SCHEMAS[task_id],
-            "difficulty": {"task1_triage": "easy", "task2_routing": "medium", "task3_resolution": "hard"}[task_id],
-            "num_tickets": 5,
+            "difficulty": {
+                "task1_triage": "easy",
+                "task2_routing": "medium",
+                "task3_resolution": "hard"
+            }[task_id],
         }
         for task_id in _env.task_ids
     }
