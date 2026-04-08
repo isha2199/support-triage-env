@@ -114,11 +114,12 @@ class SupportTriageEnv:
             done=is_done,
         )
 
+        mean_so_far = self._total_reward / self._step
         info: Dict[str, Any] = {
             "ticket_id": self._tickets[self._step - 1]["ticket_id"],
             "step": self._step - 1,
             "episode": self._episode,
-            "cumulative_reward": round(self._total_reward, 4),
+            "mean_reward": round(max(0.001, min(0.999, mean_so_far)), 6),
             "expected": ticket_expected,
         }
         if is_done:
@@ -139,7 +140,7 @@ class SupportTriageEnv:
             episode=self._episode,
             step=self._step,
             max_steps=len(self._tickets) if self._tickets else 0,
-            total_reward=round(self._total_reward, 4),
+            total_reward=round(max(0.001, min(0.999, self._total_reward / max(1, self._step))), 6),
             done=self._done,
             step_scores=list(self._step_scores),
             current_ticket_idx=self._step,
