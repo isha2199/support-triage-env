@@ -9,8 +9,8 @@ from typing import Any, Dict, Tuple
 
 from .models import Action
 
-_SCORE_MIN = 0.001
-_SCORE_MAX = 0.999
+_SCORE_MIN = 0.01
+_SCORE_MAX = 0.99
 
 
 def _clip(score: float) -> float:
@@ -19,10 +19,17 @@ def _clip(score: float) -> float:
 
 
 def _clip_breakdown(breakdown: Dict[str, float]) -> Dict[str, float]:
-    """Ensure no breakdown component is exactly 0.0 or 1.0.
-    Components are partial credit weights, not full [0,1] scores, so their
-    max values are well below 1.0 — only the zero floor needs guarding."""
-    return {k: max(_SCORE_MIN, v) for k, v in breakdown.items()}
+    """Ensure breakdown components and their sum are strictly in (0, 1).
+    1. Floor each component at _SCORE_MIN (eliminates exact 0.0).
+    2. If the sum >= _SCORE_MAX, scale all components proportionally
+       so the sum equals _SCORE_MAX (eliminates exact 1.0 on the sum).
+    """
+    floored = {k: max(_SCORE_MIN, v) for k, v in breakdown.items()}
+    total = sum(floored.values())
+    if total >= _SCORE_MAX:
+        factor = _SCORE_MAX / total
+        return {k: round(v * factor, 6) for k, v in floored.items()}
+    return floored
 
 # Priority adjacency — being one level off earns partial credit
 _PRIORITY_RANK: Dict[str, int] = {"P0": 0, "P1": 1, "P2": 2, "P3": 3}

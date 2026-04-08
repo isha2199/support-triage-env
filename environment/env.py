@@ -119,12 +119,12 @@ class SupportTriageEnv:
             "ticket_id": self._tickets[self._step - 1]["ticket_id"],
             "step": self._step - 1,
             "episode": self._episode,
-            "mean_reward": round(max(0.001, min(0.999, mean_so_far)), 6),
+            "mean_reward": round(max(0.01, min(0.99, mean_so_far)), 6),
             "expected": ticket_expected,
         }
         if is_done:
             raw = self._total_reward / len(self._tickets)
-            info["episode_score"] = round(max(0.001, min(0.999, raw)), 6)
+            info["episode_score"] = round(max(0.01, min(0.99, raw)), 6)
 
         return StepResult(
             observation=next_obs,
@@ -140,7 +140,7 @@ class SupportTriageEnv:
             episode=self._episode,
             step=self._step,
             max_steps=len(self._tickets) if self._tickets else 0,
-            total_reward=round(max(0.001, min(0.999, self._total_reward / max(1, self._step))), 6),
+            total_reward=round(max(0.01, min(0.99, self._total_reward / max(1, self._step))), 6),
             done=self._done,
             step_scores=list(self._step_scores),
             current_ticket_idx=self._step,
