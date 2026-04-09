@@ -138,7 +138,14 @@ def reset(request: Optional[ResetRequest] = Body(None)) -> ResetResponse:
 
 
 @app.post("/step", tags=["env"])
-def step(action: Action) -> StepResponse:
+def step(body: Dict[str, Any] = Body(...)) -> StepResponse:
+    # Support both flat format {"priority": "P0", ...}
+    # and openenv-core format {"action": {"priority": "P0", ...}, "timeout_s": 15}
+    if "action" in body and isinstance(body["action"], dict):
+        action_data = body["action"]
+    else:
+        action_data = body
+    action = Action(**{k: v for k, v in action_data.items() if k in Action.model_fields})
     try:
         result: StepResult = _env.step(action)
     except RuntimeError as e:
