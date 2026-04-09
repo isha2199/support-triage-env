@@ -199,6 +199,7 @@ def run_episode(env: SupportTriageEnv, task_id: str, episode: int) -> float:
         step_idx += 1
 
     mean_score = total_reward / step_idx if step_idx > 0 else 0.001
+    mean_score = max(0.01, min(0.99, mean_score))
     log_end(task_id, episode, mean_score, step_idx)
     return mean_score
 
@@ -217,11 +218,11 @@ def main() -> None:
 
     for i, task_id in enumerate(TASKS, start=1):
         score = run_episode(env, task_id=task_id, episode=i)
-        results[task_id] = round(score, 4)
+        results[task_id] = round(max(0.01, min(0.99, score)), 4)
         print(f"  → {task_id}: {score:.4f}", flush=True)
 
     print("=" * 60, flush=True)
-    overall = sum(results.values()) / len(results)
+    overall = max(0.01, min(0.99, sum(results.values()) / len(results)))
     print(f"OVERALL MEAN SCORE: {overall:.4f}", flush=True)
     print("TASK SCORES:", json.dumps(results, indent=2), flush=True)
     print("=" * 60, flush=True)
